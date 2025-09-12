@@ -1,1 +1,73 @@
-import { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Users, Calendar, Receipt, TrendingUp } from \"lucide-react\";\n\ninterface StatCardProps {\n  title: string;\n  value: string;\n  change: string;\n  icon: React.ComponentType<{ className?: string }>;\n  changeType: \"positive\" | \"negative\" | \"neutral\";\n}\n\nfunction StatCard({ title, value, change, icon: Icon, changeType }: StatCardProps) {\n  const changeColor = {\n    positive: \"text-chart-4\",\n    negative: \"text-destructive\",\n    neutral: \"text-muted-foreground\",\n  }[changeType];\n\n  return (\n    <Card>\n      <CardHeader className=\"flex flex-row items-center justify-between space-y-0 pb-2\">\n        <CardTitle className=\"text-sm font-medium\">{title}</CardTitle>\n        <Icon className=\"h-4 w-4 text-muted-foreground\" />\n      </CardHeader>\n      <CardContent>\n        <div className=\"text-2xl font-bold\">{value}</div>\n        <p className={`text-xs ${changeColor}`}>{change}</p>\n      </CardContent>\n    </Card>\n  );\n}\n\nexport function DashboardStats() {\n  // todo: remove mock functionality\n  const stats = [\n    {\n      title: \"Total Patients\",\n      value: \"2,847\",\n      change: \"+12% from last month\",\n      icon: Users,\n      changeType: \"positive\" as const,\n    },\n    {\n      title: \"Today's Appointments\",\n      value: \"23\",\n      change: \"4 pending confirmations\",\n      icon: Calendar,\n      changeType: \"neutral\" as const,\n    },\n    {\n      title: \"Monthly Revenue\",\n      value: \"₹1,24,500\",\n      change: \"+8% from last month\",\n      icon: Receipt,\n      changeType: \"positive\" as const,\n    },\n    {\n      title: \"Patient Retention\",\n      value: \"89%\",\n      change: \"+2% from last quarter\",\n      icon: TrendingUp,\n      changeType: \"positive\" as const,\n    },\n  ];\n\n  return (\n    <div className=\"grid gap-4 md:grid-cols-2 lg:grid-cols-4\">\n      {stats.map((stat, index) => (\n        <StatCard key={index} {...stat} />\n      ))}\n    </div>\n  );\n}\n
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Calendar, Receipt, TrendingUp } from "lucide-react";
+
+interface StatCardProps {
+  title: string;
+  value: string;
+  change: string;
+  icon: React.ComponentType<{ className?: string }>;
+  changeType: "positive" | "negative" | "neutral";
+}
+
+function StatCard({ title, value, change, icon: Icon, changeType }: StatCardProps) {
+  const changeColor = {
+    positive: "text-green-600",
+    negative: "text-red-600",
+    neutral: "text-muted-foreground",
+  }[changeType];
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className={`text-xs ${changeColor}`}>{change}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function DashboardStats() {
+  // todo: remove mock functionality
+  const stats = [
+    {
+      title: "Total Patients",
+      value: "2,847",
+      change: "+12% from last month",
+      icon: Users,
+      changeType: "positive" as const,
+    },
+    {
+      title: "Today's Appointments",
+      value: "23",
+      change: "4 pending confirmations",
+      icon: Calendar,
+      changeType: "neutral" as const,
+    },
+    {
+      title: "Monthly Revenue",
+      value: "₹1,24,500",
+      change: "+8% from last month",
+      icon: Receipt,
+      changeType: "positive" as const,
+    },
+    {
+      title: "Patient Retention",
+      value: "89%",
+      change: "+2% from last quarter",
+      icon: TrendingUp,
+      changeType: "positive" as const,
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat, index) => (
+        <StatCard key={index} {...stat} />
+      ))}
+    </div>
+  );
+}

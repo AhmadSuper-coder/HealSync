@@ -1,1 +1,191 @@
-import { useState } from \"react\";\nimport { PrescriptionForm } from \"@/components/PrescriptionForm\";\nimport { Button } from \"@/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";\nimport {\n  Table,\n  TableBody,\n  TableCell,\n  TableHead,\n  TableHeader,\n  TableRow,\n} from \"@/components/ui/table\";\nimport { Plus, Eye, Print, Send } from \"lucide-react\";\n\ninterface Prescription {\n  id: string;\n  patientName: string;\n  date: string;\n  medicineCount: number;\n  status: \"active\" | \"completed\" | \"expired\";\n}\n\n// todo: remove mock functionality\nconst mockPrescriptions: Prescription[] = [\n  {\n    id: \"1\",\n    patientName: \"Rajesh Sharma\",\n    date: \"2024-01-15\",\n    medicineCount: 3,\n    status: \"active\",\n  },\n  {\n    id: \"2\",\n    patientName: \"Priya Patel\",\n    date: \"2024-01-10\",\n    medicineCount: 2,\n    status: \"completed\",\n  },\n  {\n    id: \"3\",\n    patientName: \"Amit Kumar\",\n    date: \"2023-12-20\",\n    medicineCount: 4,\n    status: \"expired\",\n  },\n];\n\nexport default function Prescriptions() {\n  const [activeTab, setActiveTab] = useState(\"list\");\n\n  const handleViewPrescription = (prescription: Prescription) => {\n    console.log('View prescription:', prescription.id);\n  };\n\n  const handlePrintPrescription = (prescription: Prescription) => {\n    console.log('Print prescription:', prescription.id);\n  };\n\n  const handleSendPrescription = (prescription: Prescription) => {\n    console.log('Send prescription via WhatsApp/Email:', prescription.id);\n  };\n\n  const getStatusColor = (status: string) => {\n    switch (status) {\n      case \"active\":\n        return \"default\";\n      case \"completed\":\n        return \"secondary\";\n      case \"expired\":\n        return \"destructive\";\n      default:\n        return \"secondary\";\n    }\n  };\n\n  return (\n    <div className=\"space-y-6\">\n      <div className=\"flex justify-between items-center\">\n        <div>\n          <h1 className=\"text-3xl font-bold tracking-tight\">Prescription Management</h1>\n          <p className=\"text-muted-foreground\">\n            Create, manage, and track patient prescriptions.\n          </p>\n        </div>\n        <Button\n          onClick={() => setActiveTab(\"create\")}\n          data-testid=\"button-new-prescription\"\n        >\n          <Plus className=\"mr-2 h-4 w-4\" />\n          New Prescription\n        </Button>\n      </div>\n\n      <Tabs value={activeTab} onValueChange={setActiveTab}>\n        <TabsList>\n          <TabsTrigger value=\"list\" data-testid=\"tab-prescription-list\">Prescription History</TabsTrigger>\n          <TabsTrigger value=\"create\" data-testid=\"tab-create-prescription\">Create New</TabsTrigger>\n        </TabsList>\n\n        <TabsContent value=\"list\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Prescription History</CardTitle>\n            </CardHeader>\n            <CardContent>\n              <div className=\"rounded-md border\">\n                <Table>\n                  <TableHeader>\n                    <TableRow>\n                      <TableHead>Patient Name</TableHead>\n                      <TableHead>Date</TableHead>\n                      <TableHead>Medicines</TableHead>\n                      <TableHead>Status</TableHead>\n                      <TableHead className=\"text-right\">Actions</TableHead>\n                    </TableRow>\n                  </TableHeader>\n                  <TableBody>\n                    {mockPrescriptions.map((prescription) => (\n                      <TableRow key={prescription.id}>\n                        <TableCell className=\"font-medium\">\n                          {prescription.patientName}\n                        </TableCell>\n                        <TableCell>{prescription.date}</TableCell>\n                        <TableCell>{prescription.medicineCount} medicines</TableCell>\n                        <TableCell>\n                          <Badge \n                            variant={getStatusColor(prescription.status) as any}\n                            data-testid={`badge-status-${prescription.id}`}\n                          >\n                            {prescription.status}\n                          </Badge>\n                        </TableCell>\n                        <TableCell className=\"text-right\">\n                          <div className=\"flex justify-end gap-2\">\n                            <Button\n                              variant=\"outline\"\n                              size=\"sm\"\n                              onClick={() => handleViewPrescription(prescription)}\n                              data-testid={`button-view-${prescription.id}`}\n                            >\n                              <Eye className=\"h-4 w-4\" />\n                            </Button>\n                            <Button\n                              variant=\"outline\"\n                              size=\"sm\"\n                              onClick={() => handlePrintPrescription(prescription)}\n                              data-testid={`button-print-${prescription.id}`}\n                            >\n                              <Print className=\"h-4 w-4\" />\n                            </Button>\n                            <Button\n                              variant=\"outline\"\n                              size=\"sm\"\n                              onClick={() => handleSendPrescription(prescription)}\n                              data-testid={`button-send-${prescription.id}`}\n                            >\n                              <Send className=\"h-4 w-4\" />\n                            </Button>\n                          </div>\n                        </TableCell>\n                      </TableRow>\n                    ))}\n                  </TableBody>\n                </Table>\n              </div>\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        <TabsContent value=\"create\" className=\"space-y-6\">\n          <PrescriptionForm onSubmit={(data) => {\n            console.log('Prescription created:', data);\n            setActiveTab(\"list\");\n          }} />\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n}\n
+import { useState } from "react";
+import { PrescriptionForm } from "@/components/PrescriptionForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Eye, Download, FileText } from "lucide-react";
+
+interface Prescription {
+  id: string;
+  patientName: string;
+  date: string;
+  status: "active" | "completed" | "cancelled";
+  medicineCount: number;
+}
+
+// todo: remove mock functionality
+const mockPrescriptions: Prescription[] = [
+  {
+    id: "1",
+    patientName: "Rajesh Sharma",
+    date: "2024-01-15",
+    status: "active",
+    medicineCount: 3,
+  },
+  {
+    id: "2",
+    patientName: "Priya Patel",
+    date: "2024-01-14",
+    status: "completed",
+    medicineCount: 2,
+  },
+  {
+    id: "3",
+    patientName: "Amit Kumar",
+    date: "2024-01-13",
+    status: "active",
+    medicineCount: 4,
+  },
+];
+
+export default function Prescriptions() {
+  const [activeTab, setActiveTab] = useState("list");
+
+  const handleViewPrescription = (prescription: Prescription) => {
+    console.log('View prescription:', prescription.id);
+  };
+
+  const handleDownloadPrescription = (prescription: Prescription) => {
+    console.log('Download prescription:', prescription.id);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "default";
+      case "completed":
+        return "secondary";
+      case "cancelled":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const activeCount = mockPrescriptions.filter(p => p.status === "active").length;
+  const totalCount = mockPrescriptions.length;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Prescription Management</h1>
+          <p className="text-muted-foreground">
+            Create, manage, and track patient prescriptions.
+          </p>
+        </div>
+        <Button
+          onClick={() => setActiveTab("create")}
+          data-testid="button-new-prescription"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Prescription
+        </Button>
+      </div>
+
+      {/* Prescription Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <FileText className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Active Prescriptions</p>
+                <p className="text-2xl font-bold text-blue-600">{activeCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <FileText className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Total Prescriptions</p>
+                <p className="text-2xl font-bold text-green-600">{totalCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="list" data-testid="tab-prescription-list">Prescription List</TabsTrigger>
+          <TabsTrigger value="create" data-testid="tab-create-prescription">Create Prescription</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Prescriptions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Medicines</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockPrescriptions.map((prescription) => (
+                    <TableRow key={prescription.id}>
+                      <TableCell className="font-medium">{prescription.patientName}</TableCell>
+                      <TableCell>{prescription.date}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(prescription.status) as any}>
+                          {prescription.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{prescription.medicineCount} medicines</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewPrescription(prescription)}
+                            data-testid={`button-view-prescription-${prescription.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadPrescription(prescription)}
+                            data-testid={`button-download-prescription-${prescription.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="create" className="space-y-6">
+          <PrescriptionForm onSubmit={(data) => {
+            console.log('Prescription created:', data);
+            setActiveTab("list");
+          }} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

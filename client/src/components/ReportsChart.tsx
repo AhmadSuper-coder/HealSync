@@ -1,1 +1,147 @@
-import {\n  BarChart,\n  Bar,\n  XAxis,\n  YAxis,\n  CartesianGrid,\n  Tooltip,\n  ResponsiveContainer,\n  LineChart,\n  Line,\n  PieChart,\n  Pie,\n  Cell,\n} from \"recharts\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from \"@/components/ui/select\";\nimport { useState } from \"react\";\n\n// todo: remove mock functionality\nconst patientData = [\n  { month: \"Jan\", patients: 240, revenue: 45000 },\n  { month: \"Feb\", patients: 300, revenue: 52000 },\n  { month: \"Mar\", patients: 280, revenue: 48000 },\n  { month: \"Apr\", patients: 320, revenue: 58000 },\n  { month: \"May\", patients: 350, revenue: 62000 },\n  { month: \"Jun\", patients: 380, revenue: 68000 },\n];\n\nconst appointmentStatusData = [\n  { name: \"Completed\", value: 65, color: \"hsl(var(--chart-4))\" },\n  { name: \"Scheduled\", value: 25, color: \"hsl(var(--chart-1))\" },\n  { name: \"Cancelled\", value: 8, color: \"hsl(var(--destructive))\" },\n  { name: \"No Show\", value: 2, color: \"hsl(var(--muted))\" },\n];\n\nconst paymentStatusData = [\n  { month: \"Jan\", paid: 42000, pending: 3000 },\n  { month: \"Feb\", paid: 48000, pending: 4000 },\n  { month: \"Mar\", paid: 44000, pending: 4000 },\n  { month: \"Apr\", paid: 54000, pending: 4000 },\n  { month: \"May\", paid: 58000, pending: 4000 },\n  { month: \"Jun\", paid: 64000, pending: 4000 },\n];\n\nexport function ReportsChart() {\n  const [chartType, setChartType] = useState(\"patients\");\n\n  const renderChart = () => {\n    switch (chartType) {\n      case \"patients\":\n        return (\n          <ResponsiveContainer width=\"100%\" height={300}>\n            <BarChart data={patientData}>\n              <CartesianGrid strokeDasharray=\"3 3\" />\n              <XAxis dataKey=\"month\" />\n              <YAxis />\n              <Tooltip />\n              <Bar dataKey=\"patients\" fill=\"hsl(var(--chart-1))\" radius={[4, 4, 0, 0]} />\n            </BarChart>\n          </ResponsiveContainer>\n        );\n      case \"revenue\":\n        return (\n          <ResponsiveContainer width=\"100%\" height={300}>\n            <LineChart data={patientData}>\n              <CartesianGrid strokeDasharray=\"3 3\" />\n              <XAxis dataKey=\"month\" />\n              <YAxis />\n              <Tooltip formatter={(value) => [`₹${value}`, \"Revenue\"]} />\n              <Line type=\"monotone\" dataKey=\"revenue\" stroke=\"hsl(var(--chart-2))\" strokeWidth={3} dot={{ r: 6 }} />\n            </LineChart>\n          </ResponsiveContainer>\n        );\n      case \"appointments\":\n        return (\n          <ResponsiveContainer width=\"100%\" height={300}>\n            <PieChart>\n              <Pie\n                data={appointmentStatusData}\n                cx=\"50%\"\n                cy=\"50%\"\n                outerRadius={100}\n                dataKey=\"value\"\n                label={({ name, value }) => `${name}: ${value}%`}\n              >\n                {appointmentStatusData.map((entry, index) => (\n                  <Cell key={`cell-${index}`} fill={entry.color} />\n                ))}\n              </Pie>\n              <Tooltip />\n            </PieChart>\n          </ResponsiveContainer>\n        );\n      case \"payments\":\n        return (\n          <ResponsiveContainer width=\"100%\" height={300}>\n            <BarChart data={paymentStatusData}>\n              <CartesianGrid strokeDasharray=\"3 3\" />\n              <XAxis dataKey=\"month\" />\n              <YAxis />\n              <Tooltip formatter={(value) => [`₹${value}`, \"Amount\"]} />\n              <Bar dataKey=\"paid\" fill=\"hsl(var(--chart-4))\" radius={[4, 4, 0, 0]} />\n              <Bar dataKey=\"pending\" fill=\"hsl(var(--chart-5))\" radius={[4, 4, 0, 0]} />\n            </BarChart>\n          </ResponsiveContainer>\n        );\n      default:\n        return null;\n    }\n  };\n\n  const getChartTitle = () => {\n    switch (chartType) {\n      case \"patients\":\n        return \"Patient Analytics - Monthly Overview\";\n      case \"revenue\":\n        return \"Revenue Trends - Last 6 Months\";\n      case \"appointments\":\n        return \"Appointment Status Distribution\";\n      case \"payments\":\n        return \"Payment Status - Paid vs Pending\";\n      default:\n        return \"Analytics\";\n    }\n  };\n\n  return (\n    <Card>\n      <CardHeader className=\"flex flex-row items-center justify-between space-y-0 pb-2\">\n        <CardTitle className=\"text-lg font-medium\">{getChartTitle()}</CardTitle>\n        <Select value={chartType} onValueChange={setChartType}>\n          <SelectTrigger className=\"w-40\" data-testid=\"select-chart-type\">\n            <SelectValue />\n          </SelectTrigger>\n          <SelectContent>\n            <SelectItem value=\"patients\">Patient Count</SelectItem>\n            <SelectItem value=\"revenue\">Revenue</SelectItem>\n            <SelectItem value=\"appointments\">Appointments</SelectItem>\n            <SelectItem value=\"payments\">Payments</SelectItem>\n          </SelectContent>\n        </Select>\n      </CardHeader>\n      <CardContent>{renderChart()}</CardContent>\n    </Card>\n  );\n}\n
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
+
+// todo: remove mock functionality
+const patientData = [
+  { month: "Jan", patients: 240, revenue: 45000 },
+  { month: "Feb", patients: 300, revenue: 52000 },
+  { month: "Mar", patients: 280, revenue: 48000 },
+  { month: "Apr", patients: 320, revenue: 58000 },
+  { month: "May", patients: 350, revenue: 62000 },
+  { month: "Jun", patients: 380, revenue: 68000 },
+];
+
+const appointmentStatusData = [
+  { name: "Completed", value: 65, color: "#22c55e" },
+  { name: "Scheduled", value: 25, color: "#3b82f6" },
+  { name: "Cancelled", value: 8, color: "#ef4444" },
+  { name: "No Show", value: 2, color: "#6b7280" },
+];
+
+const paymentStatusData = [
+  { month: "Jan", paid: 42000, pending: 3000 },
+  { month: "Feb", paid: 48000, pending: 4000 },
+  { month: "Mar", paid: 44000, pending: 4000 },
+  { month: "Apr", paid: 54000, pending: 4000 },
+  { month: "May", paid: 58000, pending: 4000 },
+  { month: "Jun", paid: 64000, pending: 4000 },
+];
+
+export function ReportsChart() {
+  const [chartType, setChartType] = useState("patients");
+
+  const renderChart = () => {
+    switch (chartType) {
+      case "patients":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={patientData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="patients" fill="#3b82f6" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case "revenue":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={patientData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#22c55e" 
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case "appointments":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={appointmentStatusData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {appointmentStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+      case "payments":
+        return (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={paymentStatusData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="paid" fill="#22c55e" />
+              <Bar dataKey="pending" fill="#f59e0b" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Analytics Overview</CardTitle>
+          <Select value={chartType} onValueChange={setChartType}>
+            <SelectTrigger className="w-48" data-testid="select-chart-type">
+              <SelectValue placeholder="Select chart type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="patients">Patient Growth</SelectItem>
+              <SelectItem value="revenue">Revenue Trends</SelectItem>
+              <SelectItem value="appointments">Appointment Status</SelectItem>
+              <SelectItem value="payments">Payment Status</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {renderChart()}
+      </CardContent>
+    </Card>
+  );
+}

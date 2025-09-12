@@ -1,1 +1,172 @@
-import { useState } from \"react\";\nimport { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { z } from \"zod\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Form,\n  FormControl,\n  FormField,\n  FormItem,\n  FormLabel,\n  FormMessage,\n} from \"@/components/ui/form\";\nimport { Input } from \"@/components/ui/input\";\nimport { Textarea } from \"@/components/ui/textarea\";\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from \"@/components/ui/select\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { useToast } from \"@/hooks/use-toast\";\n\nconst billingFormSchema = z.object({\n  patientName: z.string().min(2, \"Patient name is required\"),\n  amount: z.string().min(1, \"Amount is required\"),\n  description: z.string().min(1, \"Description is required\"),\n  paymentMethod: z.string().optional(),\n});\n\ntype BillingFormData = z.infer<typeof billingFormSchema>;\n\ninterface BillingFormProps {\n  onSubmit?: (data: BillingFormData) => void;\n  initialData?: Partial<BillingFormData>;\n  isEditing?: boolean;\n}\n\nexport function BillingForm({ onSubmit, initialData, isEditing = false }: BillingFormProps) {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const { toast } = useToast();\n\n  const form = useForm<BillingFormData>({\n    resolver: zodResolver(billingFormSchema),\n    defaultValues: {\n      patientName: initialData?.patientName || \"\",\n      amount: initialData?.amount || \"\",\n      description: initialData?.description || \"\",\n      paymentMethod: initialData?.paymentMethod || \"\",\n    },\n  });\n\n  const handleSubmit = async (data: BillingFormData) => {\n    setIsSubmitting(true);\n    try {\n      console.log('Bill generated:', data);\n      onSubmit?.(data);\n      toast({\n        title: isEditing ? \"Bill Updated\" : \"Bill Generated\",\n        description: `Bill for ${data.patientName} has been ${isEditing ? 'updated' : 'generated'}.`,\n      });\n      if (!isEditing) {\n        form.reset();\n      }\n    } catch (error) {\n      toast({\n        title: \"Error\",\n        description: \"Something went wrong. Please try again.\",\n        variant: \"destructive\",\n      });\n    } finally {\n      setIsSubmitting(false);\n    }\n  };\n\n  return (\n    <Card>\n      <CardHeader>\n        <CardTitle>{isEditing ? \"Edit Bill\" : \"Generate New Bill\"}</CardTitle>\n      </CardHeader>\n      <CardContent>\n        <Form {...form}>\n          <form onSubmit={form.handleSubmit(handleSubmit)} className=\"space-y-6\">\n            <FormField\n              control={form.control}\n              name=\"patientName\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Patient Name</FormLabel>\n                  <FormControl>\n                    <Input placeholder=\"Search or enter patient name\" data-testid=\"input-patient-name\" {...field} />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <FormField\n                control={form.control}\n                name=\"amount\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Amount (₹)</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"500\" type=\"number\" data-testid=\"input-amount\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n              <FormField\n                control={form.control}\n                name=\"paymentMethod\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Payment Method (Optional)</FormLabel>\n                    <Select onValueChange={field.onChange} defaultValue={field.value}>\n                      <FormControl>\n                        <SelectTrigger data-testid=\"select-payment-method\">\n                          <SelectValue placeholder=\"Select payment method\" />\n                        </SelectTrigger>\n                      </FormControl>\n                      <SelectContent>\n                        <SelectItem value=\"cash\">Cash</SelectItem>\n                        <SelectItem value=\"upi\">UPI</SelectItem>\n                        <SelectItem value=\"card\">Card</SelectItem>\n                        <SelectItem value=\"online\">Online Transfer</SelectItem>\n                      </SelectContent>\n                    </Select>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n            </div>\n\n            <FormField\n              control={form.control}\n              name=\"description\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Description</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"Consultation fee, medicine, follow-up, etc.\"\n                      className=\"resize-none\"\n                      data-testid=\"input-description\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <div className=\"flex gap-4\">\n              <Button\n                type=\"submit\"\n                disabled={isSubmitting}\n                className=\"flex-1\"\n                data-testid=\"button-generate-bill\"\n              >\n                {isSubmitting ? \"Generating...\" : isEditing ? \"Update Bill\" : \"Generate Bill\"}\n              </Button>\n              <Button\n                type=\"button\"\n                variant=\"outline\"\n                disabled={isSubmitting}\n                onClick={() => {\n                  console.log('Print invoice triggered');\n                  toast({\n                    title: \"Print Invoice\",\n                    description: \"Invoice will be prepared for printing.\",\n                  });\n                }}\n                data-testid=\"button-print-invoice\"\n              >\n                Print Invoice\n              </Button>\n            </div>\n          </form>\n        </Form>\n      </CardContent>\n    </Card>\n  );\n}\n
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+
+const billingFormSchema = z.object({
+  patientName: z.string().min(2, "Patient name is required"),
+  amount: z.string().min(1, "Amount is required"),
+  description: z.string().min(1, "Description is required"),
+  paymentMethod: z.string().optional(),
+});
+
+type BillingFormData = z.infer<typeof billingFormSchema>;
+
+interface BillingFormProps {
+  onSubmit?: (data: BillingFormData) => void;
+  initialData?: Partial<BillingFormData>;
+  isEditing?: boolean;
+}
+
+export function BillingForm({ onSubmit, initialData, isEditing = false }: BillingFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<BillingFormData>({
+    resolver: zodResolver(billingFormSchema),
+    defaultValues: {
+      patientName: initialData?.patientName || "",
+      amount: initialData?.amount || "",
+      description: initialData?.description || "",
+      paymentMethod: initialData?.paymentMethod || "",
+    },
+  });
+
+  const handleSubmit = async (data: BillingFormData) => {
+    setIsSubmitting(true);
+    try {
+      console.log('Bill generated:', data);
+      onSubmit?.(data);
+      toast({
+        title: isEditing ? "Bill Updated" : "Bill Generated",
+        description: `Bill for ${data.patientName} has been ${isEditing ? 'updated' : 'generated'}.`,
+      });
+      
+      if (!isEditing) {
+        form.reset();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditing ? 'update' : 'generate'} bill. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEditing ? "Edit Bill" : "Generate New Bill"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="patientName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Patient Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter patient name" data-testid="input-patient-name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount (₹)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="Enter amount" 
+                      data-testid="input-amount" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter service description"
+                      className="resize-none"
+                      data-testid="input-description"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-payment-method">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="online">Online Transfer</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="button-submit-bill">
+              {isSubmitting ? "Generating..." : isEditing ? "Update Bill" : "Generate Bill"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}

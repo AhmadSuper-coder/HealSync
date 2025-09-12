@@ -1,1 +1,153 @@
-import { DashboardStats } from \"@/components/DashboardStats\";\nimport { ReportsChart } from \"@/components/ReportsChart\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Button } from \"@/components/ui/button\";\nimport { Calendar, Users, Stethoscope, Receipt } from \"lucide-react\";\nimport { Link } from \"wouter\";\n\ninterface QuickActionProps {\n  title: string;\n  description: string;\n  icon: React.ComponentType<{ className?: string }>;\n  href: string;\n}\n\nfunction QuickAction({ title, description, icon: Icon, href }: QuickActionProps) {\n  return (\n    <Link href={href}>\n      <Card className=\"hover-elevate cursor-pointer\">\n        <CardContent className=\"p-6\">\n          <div className=\"flex items-center space-x-4\">\n            <div className=\"p-2 bg-primary/10 rounded-lg\">\n              <Icon className=\"h-6 w-6 text-primary\" />\n            </div>\n            <div>\n              <h3 className=\"font-semibold\">{title}</h3>\n              <p className=\"text-sm text-muted-foreground\">{description}</p>\n            </div>\n          </div>\n        </CardContent>\n      </Card>\n    </Link>\n  );\n}\n\nexport default function Dashboard() {\n  // todo: remove mock functionality\n  const todayAppointments = [\n    { time: \"10:00\", patient: \"Rajesh Sharma\", type: \"Consultation\" },\n    { time: \"11:30\", patient: \"Priya Patel\", type: \"Follow-up\" },\n    { time: \"14:00\", patient: \"Amit Kumar\", type: \"New Patient\" },\n    { time: \"15:30\", patient: \"Sunita Singh\", type: \"Consultation\" },\n  ];\n\n  const recentActivity = [\n    \"New patient Rajesh Sharma registered\",\n    \"Prescription created for Priya Patel\",\n    \"Appointment scheduled for tomorrow\",\n    \"Payment received from Amit Kumar\",\n  ];\n\n  return (\n    <div className=\"space-y-6\">\n      {/* Header */}\n      <div>\n        <h1 className=\"text-3xl font-bold tracking-tight\">Dashboard</h1>\n        <p className=\"text-muted-foreground\">\n          Welcome back, Dr. Sarah Johnson. Here's your clinic overview.\n        </p>\n      </div>\n\n      {/* Stats Cards */}\n      <DashboardStats />\n\n      {/* Quick Actions */}\n      <div>\n        <h2 className=\"text-xl font-semibold mb-4\">Quick Actions</h2>\n        <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4\">\n          <QuickAction\n            title=\"New Patient\"\n            description=\"Register a new patient\"\n            icon={Users}\n            href=\"/patients\"\n          />\n          <QuickAction\n            title=\"Schedule Appointment\"\n            description=\"Book new appointment\"\n            icon={Calendar}\n            href=\"/appointments\"\n          />\n          <QuickAction\n            title=\"Create Prescription\"\n            description=\"Write prescription\"\n            icon={Stethoscope}\n            href=\"/prescriptions\"\n          />\n          <QuickAction\n            title=\"Generate Bill\"\n            description=\"Create invoice\"\n            icon={Receipt}\n            href=\"/billing\"\n          />\n        </div>\n      </div>\n\n      <div className=\"grid grid-cols-1 lg:grid-cols-3 gap-6\">\n        {/* Today's Appointments */}\n        <Card>\n          <CardHeader>\n            <CardTitle>Today's Appointments</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"space-y-3\">\n              {todayAppointments.map((appointment, index) => (\n                <div key={index} className=\"flex items-center justify-between p-3 border rounded-lg\">\n                  <div>\n                    <p className=\"font-medium\">{appointment.patient}</p>\n                    <p className=\"text-sm text-muted-foreground\">{appointment.type}</p>\n                  </div>\n                  <div className=\"text-right\">\n                    <p className=\"font-medium\">{appointment.time}</p>\n                  </div>\n                </div>\n              ))}\n            </div>\n            <div className=\"mt-4\">\n              <Button variant=\"outline\" className=\"w-full\" asChild>\n                <Link href=\"/appointments\">View All Appointments</Link>\n              </Button>\n            </div>\n          </CardContent>\n        </Card>\n\n        {/* Recent Activity */}\n        <Card>\n          <CardHeader>\n            <CardTitle>Recent Activity</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"space-y-3\">\n              {recentActivity.map((activity, index) => (\n                <div key={index} className=\"flex items-start gap-3\">\n                  <div className=\"w-2 h-2 bg-primary rounded-full mt-2\" />\n                  <p className=\"text-sm\">{activity}</p>\n                </div>\n              ))}\n            </div>\n          </CardContent>\n        </Card>\n\n        {/* Pending Tasks */}\n        <Card>\n          <CardHeader>\n            <CardTitle>Pending Tasks</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"space-y-3\">\n              <div className=\"flex items-center justify-between p-3 border rounded-lg\">\n                <div>\n                  <p className=\"font-medium\">Follow-up calls</p>\n                  <p className=\"text-sm text-muted-foreground\">5 patients</p>\n                </div>\n                <Button size=\"sm\" variant=\"outline\">Action</Button>\n              </div>\n              <div className=\"flex items-center justify-between p-3 border rounded-lg\">\n                <div>\n                  <p className=\"font-medium\">Pending payments</p>\n                  <p className=\"text-sm text-muted-foreground\">₹15,000</p>\n                </div>\n                <Button size=\"sm\" variant=\"outline\">Review</Button>\n              </div>\n              <div className=\"flex items-center justify-between p-3 border rounded-lg\">\n                <div>\n                  <p className=\"font-medium\">Reports to review</p>\n                  <p className=\"text-sm text-muted-foreground\">3 files</p>\n                </div>\n                <Button size=\"sm\" variant=\"outline\">View</Button>\n              </div>\n            </div>\n          </CardContent>\n        </Card>\n      </div>\n\n      {/* Analytics Chart */}\n      <ReportsChart />\n    </div>\n  );\n}\n
+import { DashboardStats } from "@/components/DashboardStats";
+import { ReportsChart } from "@/components/ReportsChart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, Stethoscope, Receipt } from "lucide-react";
+import { Link } from "wouter";
+
+interface QuickActionProps {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+}
+
+function QuickAction({ title, description, icon: Icon, href }: QuickActionProps) {
+  return (
+    <Link href={href}>
+      <Card className="hover-elevate cursor-pointer">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold">{title}</h3>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+export default function Dashboard() {
+  // todo: remove mock functionality
+  const todayAppointments = [
+    { time: "10:00", patient: "Rajesh Sharma", type: "Consultation" },
+    { time: "11:30", patient: "Priya Patel", type: "Follow-up" },
+    { time: "14:00", patient: "Amit Kumar", type: "New Patient" },
+    { time: "15:30", patient: "Sunita Singh", type: "Consultation" },
+  ];
+
+  const recentActivity = [
+    "New patient Rajesh Sharma registered",
+    "Prescription created for Priya Patel",
+    "Appointment scheduled for tomorrow",
+    "Payment received from Amit Kumar",
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome to your HomeoClinic management system.
+        </p>
+      </div>
+
+      {/* Stats Overview */}
+      <DashboardStats />
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickAction
+              title="New Patient"
+              description="Register a new patient"
+              icon={Users}
+              href="/patients"
+            />
+            <QuickAction
+              title="Schedule Appointment"
+              description="Book new appointment"
+              icon={Calendar}
+              href="/appointments"
+            />
+            <QuickAction
+              title="Create Prescription"
+              description="Write new prescription"
+              icon={Stethoscope}
+              href="/prescriptions"
+            />
+            <QuickAction
+              title="Generate Bill"
+              description="Create patient invoice"
+              icon={Receipt}
+              href="/billing"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Appointments */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Today's Appointments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {todayAppointments.map((appointment, index) => (
+                <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{appointment.patient}</p>
+                    <p className="text-sm text-muted-foreground">{appointment.type}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{appointment.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" className="w-full mt-4" asChild>
+              <Link href="/appointments">View All Appointments</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm">{activity}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Analytics Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReportsChart />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

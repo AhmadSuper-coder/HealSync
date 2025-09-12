@@ -1,1 +1,206 @@
-import { useState } from \"react\";\nimport { Calendar } from \"@/components/ui/calendar\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Button } from \"@/components/ui/button\";\nimport { format } from \"date-fns\";\nimport { Clock, User, Phone } from \"lucide-react\";\n\ninterface Appointment {\n  id: string;\n  patientName: string;\n  time: string;\n  duration: string;\n  type: \"consultation\" | \"follow-up\" | \"emergency\";\n  status: \"scheduled\" | \"completed\" | \"cancelled\";\n  phone?: string;\n}\n\n// todo: remove mock functionality\nconst mockAppointments: Record<string, Appointment[]> = {\n  \"2024-01-15\": [\n    {\n      id: \"1\",\n      patientName: \"Rajesh Sharma\",\n      time: \"10:00\",\n      duration: \"30 min\",\n      type: \"consultation\",\n      status: \"scheduled\",\n      phone: \"+91 9876543210\",\n    },\n    {\n      id: \"2\",\n      patientName: \"Priya Patel\",\n      time: \"11:00\",\n      duration: \"45 min\",\n      type: \"follow-up\",\n      status: \"scheduled\",\n      phone: \"+91 9876543211\",\n    },\n  ],\n  \"2024-01-16\": [\n    {\n      id: \"3\",\n      patientName: \"Amit Kumar\",\n      time: \"15:00\",\n      duration: \"30 min\",\n      type: \"consultation\",\n      status: \"scheduled\",\n      phone: \"+91 9876543212\",\n    },\n  ],\n};\n\nexport function AppointmentCalendar() {\n  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());\n  const selectedDateStr = selectedDate ? format(selectedDate, \"yyyy-MM-dd\") : \"\";\n  const appointments = selectedDateStr ? mockAppointments[selectedDateStr] || [] : [];\n\n  const handleCallPatient = (appointment: Appointment) => {\n    console.log('Call patient:', appointment.phone);\n  };\n\n  const handleMarkComplete = (appointment: Appointment) => {\n    console.log('Mark appointment complete:', appointment.id);\n  };\n\n  const handleReschedule = (appointment: Appointment) => {\n    console.log('Reschedule appointment:', appointment.id);\n  };\n\n  const getTypeColor = (type: string) => {\n    switch (type) {\n      case \"consultation\":\n        return \"default\";\n      case \"follow-up\":\n        return \"secondary\";\n      case \"emergency\":\n        return \"destructive\";\n      default:\n        return \"default\";\n    }\n  };\n\n  const getStatusColor = (status: string) => {\n    switch (status) {\n      case \"scheduled\":\n        return \"text-chart-1\";\n      case \"completed\":\n        return \"text-chart-4\";\n      case \"cancelled\":\n        return \"text-destructive\";\n      default:\n        return \"text-muted-foreground\";\n    }\n  };\n\n  return (\n    <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n      <Card>\n        <CardHeader>\n          <CardTitle>Appointment Calendar</CardTitle>\n        </CardHeader>\n        <CardContent>\n          <Calendar\n            mode=\"single\"\n            selected={selectedDate}\n            onSelect={setSelectedDate}\n            disabled={(date) => date < new Date(\"1900-01-01\")}\n            className=\"rounded-md border\"\n          />\n        </CardContent>\n      </Card>\n\n      <Card>\n        <CardHeader>\n          <CardTitle>\n            Appointments for {selectedDate ? format(selectedDate, \"PPP\") : \"Select a date\"}\n          </CardTitle>\n        </CardHeader>\n        <CardContent>\n          {appointments.length === 0 ? (\n            <p className=\"text-muted-foreground text-center py-8\">\n              No appointments scheduled for this date.\n            </p>\n          ) : (\n            <div className=\"space-y-4\">\n              {appointments.map((appointment) => (\n                <div\n                  key={appointment.id}\n                  className=\"flex items-center justify-between p-4 border rounded-lg hover-elevate\"\n                >\n                  <div className=\"flex-1\">\n                    <div className=\"flex items-center gap-2 mb-2\">\n                      <User className=\"h-4 w-4\" />\n                      <span className=\"font-medium\">{appointment.patientName}</span>\n                      <Badge variant={getTypeColor(appointment.type) as any}>\n                        {appointment.type}\n                      </Badge>\n                    </div>\n                    <div className=\"flex items-center gap-4 text-sm text-muted-foreground\">\n                      <div className=\"flex items-center gap-1\">\n                        <Clock className=\"h-3 w-3\" />\n                        {appointment.time} ({appointment.duration})\n                      </div>\n                      <div className={`font-medium ${getStatusColor(appointment.status)}`}>\n                        {appointment.status}\n                      </div>\n                    </div>\n                  </div>\n                  <div className=\"flex items-center gap-2\">\n                    {appointment.phone && (\n                      <Button\n                        variant=\"outline\"\n                        size=\"sm\"\n                        onClick={() => handleCallPatient(appointment)}\n                        data-testid={`button-call-${appointment.id}`}\n                      >\n                        <Phone className=\"h-4 w-4\" />\n                      </Button>\n                    )}\n                    {appointment.status === \"scheduled\" && (\n                      <>\n                        <Button\n                          variant=\"outline\"\n                          size=\"sm\"\n                          onClick={() => handleMarkComplete(appointment)}\n                          data-testid={`button-complete-${appointment.id}`}\n                        >\n                          Complete\n                        </Button>\n                        <Button\n                          variant=\"outline\"\n                          size=\"sm\"\n                          onClick={() => handleReschedule(appointment)}\n                          data-testid={`button-reschedule-${appointment.id}`}\n                        >\n                          Reschedule\n                        </Button>\n                      </>\n                    )}\n                  </div>\n                </div>\n              ))}\n            </div>\n          )}\n        </CardContent>\n      </Card>\n    </div>\n  );\n}\n
+import { useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { Clock, User, Phone } from "lucide-react";
+
+interface Appointment {
+  id: string;
+  patientName: string;
+  time: string;
+  duration: string;
+  type: "consultation" | "follow-up" | "emergency";
+  status: "scheduled" | "completed" | "cancelled";
+  phone?: string;
+}
+
+// todo: remove mock functionality
+const mockAppointments: Record<string, Appointment[]> = {
+  "2024-01-15": [
+    {
+      id: "1",
+      patientName: "Rajesh Sharma",
+      time: "10:00",
+      duration: "30 min",
+      type: "consultation",
+      status: "scheduled",
+      phone: "+91 9876543210",
+    },
+    {
+      id: "2",
+      patientName: "Priya Patel",
+      time: "11:00",
+      duration: "45 min",
+      type: "follow-up",
+      status: "scheduled",
+      phone: "+91 9876543211",
+    },
+  ],
+  "2024-01-16": [
+    {
+      id: "3",
+      patientName: "Amit Kumar",
+      time: "15:00",
+      duration: "30 min",
+      type: "consultation",
+      status: "scheduled",
+      phone: "+91 9876543212",
+    },
+  ],
+};
+
+export function AppointmentCalendar() {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const selectedDateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
+  const appointments = selectedDateStr ? mockAppointments[selectedDateStr] || [] : [];
+
+  const handleCallPatient = (appointment: Appointment) => {
+    console.log('Call patient:', appointment.phone);
+  };
+
+  const handleMarkComplete = (appointment: Appointment) => {
+    console.log('Mark appointment complete:', appointment.id);
+  };
+
+  const handleReschedule = (appointment: Appointment) => {
+    console.log('Reschedule appointment:', appointment.id);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "scheduled":
+        return "default";
+      case "completed":
+        return "secondary";
+      case "cancelled":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "consultation":
+        return "bg-blue-100 text-blue-800";
+      case "follow-up":
+        return "bg-green-100 text-green-800";
+      case "emergency":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Calendar */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Date</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            className="rounded-md border"
+            data-testid="appointment-calendar"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Appointments List */}
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>
+            Appointments for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Select a date"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {appointments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No appointments scheduled for this date.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {appointments.map((appointment) => (
+                <div 
+                  key={appointment.id} 
+                  className="p-4 border rounded-lg hover-elevate"
+                  data-testid={`appointment-item-${appointment.id}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-semibold">{appointment.patientName}</span>
+                        <Badge 
+                          variant={getStatusColor(appointment.status) as any}
+                          className="ml-2"
+                        >
+                          {appointment.status}
+                        </Badge>
+                        <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(appointment.type)}`}>
+                          {appointment.type}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{appointment.time} ({appointment.duration})</span>
+                        </div>
+                        {appointment.phone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-4 w-4" />
+                            <span>{appointment.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {appointment.phone && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCallPatient(appointment)}
+                          data-testid={`button-call-${appointment.id}`}
+                        >
+                          <Phone className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {appointment.status === "scheduled" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => handleMarkComplete(appointment)}
+                            data-testid={`button-complete-${appointment.id}`}
+                          >
+                            Complete
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleReschedule(appointment)}
+                            data-testid={`button-reschedule-${appointment.id}`}
+                          >
+                            Reschedule
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

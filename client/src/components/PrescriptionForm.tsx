@@ -1,1 +1,278 @@
-import { useState } from \"react\";\nimport { useForm, useFieldArray } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { z } from \"zod\";\nimport { Plus, Trash2 } from \"lucide-react\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Form,\n  FormControl,\n  FormField,\n  FormItem,\n  FormLabel,\n  FormMessage,\n} from \"@/components/ui/form\";\nimport { Input } from \"@/components/ui/input\";\nimport { Textarea } from \"@/components/ui/textarea\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { useToast } from \"@/hooks/use-toast\";\n\nconst medicineSchema = z.object({\n  name: z.string().min(1, \"Medicine name is required\"),\n  dosage: z.string().min(1, \"Dosage is required\"),\n  frequency: z.string().min(1, \"Frequency is required\"),\n  duration: z.string().min(1, \"Duration is required\"),\n});\n\nconst prescriptionFormSchema = z.object({\n  patientName: z.string().min(2, \"Patient name is required\"),\n  medicines: z.array(medicineSchema).min(1, \"At least one medicine is required\"),\n  instructions: z.string().optional(),\n  followUpDate: z.string().optional(),\n});\n\ntype PrescriptionFormData = z.infer<typeof prescriptionFormSchema>;\n\ninterface PrescriptionFormProps {\n  onSubmit?: (data: PrescriptionFormData) => void;\n  initialData?: Partial<PrescriptionFormData>;\n  isEditing?: boolean;\n}\n\nexport function PrescriptionForm({ onSubmit, initialData, isEditing = false }: PrescriptionFormProps) {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const { toast } = useToast();\n\n  const form = useForm<PrescriptionFormData>({\n    resolver: zodResolver(prescriptionFormSchema),\n    defaultValues: {\n      patientName: initialData?.patientName || \"\",\n      medicines: initialData?.medicines || [{ name: \"\", dosage: \"\", frequency: \"\", duration: \"\" }],\n      instructions: initialData?.instructions || \"\",\n      followUpDate: initialData?.followUpDate || \"\",\n    },\n  });\n\n  const { fields, append, remove } = useFieldArray({\n    control: form.control,\n    name: \"medicines\",\n  });\n\n  const handleSubmit = async (data: PrescriptionFormData) => {\n    setIsSubmitting(true);\n    try {\n      console.log('Prescription created:', data);\n      onSubmit?.(data);\n      toast({\n        title: isEditing ? \"Prescription Updated\" : \"Prescription Created\",\n        description: `Prescription for ${data.patientName} has been ${isEditing ? 'updated' : 'created'}.`,\n      });\n      if (!isEditing) {\n        form.reset();\n      }\n    } catch (error) {\n      toast({\n        title: \"Error\",\n        description: \"Something went wrong. Please try again.\",\n        variant: \"destructive\",\n      });\n    } finally {\n      setIsSubmitting(false);\n    }\n  };\n\n  const addMedicine = () => {\n    append({ name: \"\", dosage: \"\", frequency: \"\", duration: \"\" });\n  };\n\n  return (\n    <Card>\n      <CardHeader>\n        <CardTitle>{isEditing ? \"Edit Prescription\" : \"Create New Prescription\"}</CardTitle>\n      </CardHeader>\n      <CardContent>\n        <Form {...form}>\n          <form onSubmit={form.handleSubmit(handleSubmit)} className=\"space-y-6\">\n            <FormField\n              control={form.control}\n              name=\"patientName\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Patient Name</FormLabel>\n                  <FormControl>\n                    <Input placeholder=\"Search or enter patient name\" data-testid=\"input-patient-name\" {...field} />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <div className=\"space-y-4\">\n              <div className=\"flex items-center justify-between\">\n                <h3 className=\"text-lg font-medium\">Medicines</h3>\n                <Button\n                  type=\"button\"\n                  variant=\"outline\"\n                  size=\"sm\"\n                  onClick={addMedicine}\n                  data-testid=\"button-add-medicine\"\n                >\n                  <Plus className=\"h-4 w-4 mr-2\" />\n                  Add Medicine\n                </Button>\n              </div>\n\n              {fields.map((field, index) => (\n                <Card key={field.id} className=\"p-4\">\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                    <FormField\n                      control={form.control}\n                      name={`medicines.${index}.name`}\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Medicine Name</FormLabel>\n                          <FormControl>\n                            <Input placeholder=\"Arnica Montana 30\" data-testid={`input-medicine-name-${index}`} {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                    <FormField\n                      control={form.control}\n                      name={`medicines.${index}.dosage`}\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Dosage</FormLabel>\n                          <FormControl>\n                            <Input placeholder=\"5 drops\" data-testid={`input-dosage-${index}`} {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                  </div>\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4 mt-4\">\n                    <FormField\n                      control={form.control}\n                      name={`medicines.${index}.frequency`}\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Frequency</FormLabel>\n                          <FormControl>\n                            <Input placeholder=\"3 times daily\" data-testid={`input-frequency-${index}`} {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                    <FormField\n                      control={form.control}\n                      name={`medicines.${index}.duration`}\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Duration</FormLabel>\n                          <FormControl>\n                            <Input placeholder=\"15 days\" data-testid={`input-duration-${index}`} {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                  </div>\n                  {fields.length > 1 && (\n                    <div className=\"flex justify-end mt-4\">\n                      <Button\n                        type=\"button\"\n                        variant=\"outline\"\n                        size=\"sm\"\n                        onClick={() => remove(index)}\n                        data-testid={`button-remove-medicine-${index}`}\n                      >\n                        <Trash2 className=\"h-4 w-4 mr-2\" />\n                        Remove\n                      </Button>\n                    </div>\n                  )}\n                </Card>\n              ))}\n            </div>\n\n            <FormField\n              control={form.control}\n              name=\"instructions\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Additional Instructions</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"Take on empty stomach, avoid spicy food, etc.\"\n                      className=\"resize-none\"\n                      data-testid=\"input-instructions\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <FormField\n              control={form.control}\n              name=\"followUpDate\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Follow-up Date (Optional)</FormLabel>\n                  <FormControl>\n                    <Input type=\"date\" data-testid=\"input-follow-up-date\" {...field} />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <Button\n              type=\"submit\"\n              disabled={isSubmitting}\n              className=\"w-full\"\n              data-testid=\"button-submit-prescription\"\n            >\n              {isSubmitting ? \"Creating...\" : isEditing ? \"Update Prescription\" : \"Create Prescription\"}\n            </Button>\n          </form>\n        </Form>\n      </CardContent>\n    </Card>\n  );\n}\n
+import { useState } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+
+const medicineSchema = z.object({
+  name: z.string().min(1, "Medicine name is required"),
+  dosage: z.string().min(1, "Dosage is required"),
+  frequency: z.string().min(1, "Frequency is required"),
+  duration: z.string().min(1, "Duration is required"),
+});
+
+const prescriptionFormSchema = z.object({
+  patientName: z.string().min(2, "Patient name is required"),
+  medicines: z.array(medicineSchema).min(1, "At least one medicine is required"),
+  instructions: z.string().optional(),
+  followUpDate: z.string().optional(),
+});
+
+type PrescriptionFormData = z.infer<typeof prescriptionFormSchema>;
+
+interface PrescriptionFormProps {
+  onSubmit?: (data: PrescriptionFormData) => void;
+  initialData?: Partial<PrescriptionFormData>;
+  isEditing?: boolean;
+}
+
+export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: PrescriptionFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<PrescriptionFormData>({
+    resolver: zodResolver(prescriptionFormSchema),
+    defaultValues: {
+      patientName: initialData?.patientName || "",
+      medicines: initialData?.medicines || [{ name: "", dosage: "", frequency: "", duration: "" }],
+      instructions: initialData?.instructions || "",
+      followUpDate: initialData?.followUpDate || "",
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "medicines",
+  });
+
+  const handleSubmit = async (data: PrescriptionFormData) => {
+    setIsSubmitting(true);
+    try {
+      console.log('Prescription created:', data);
+      onSubmit?.(data);
+      toast({
+        title: isEditing ? "Prescription Updated" : "Prescription Created",
+        description: `Prescription for ${data.patientName} has been ${isEditing ? 'updated' : 'created'}.`,
+      });
+      
+      if (!isEditing) {
+        form.reset();
+        // Reset to single medicine entry
+        form.setValue("medicines", [{ name: "", dosage: "", frequency: "", duration: "" }]);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditing ? 'update' : 'create'} prescription. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const addMedicine = () => {
+    append({ name: "", dosage: "", frequency: "", duration: "" });
+  };
+
+  const removeMedicine = (index: number) => {
+    if (fields.length > 1) {
+      remove(index);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEditing ? "Edit Prescription" : "Create New Prescription"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Patient Information */}
+            <FormField
+              control={form.control}
+              name="patientName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Patient Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter patient name" data-testid="input-patient-name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Medicines Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Medicines</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addMedicine}
+                  data-testid="button-add-medicine"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Medicine
+                </Button>
+              </div>
+
+              {fields.map((field, index) => (
+                <Card key={field.id} className="p-4">
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="font-medium">Medicine {index + 1}</h4>
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeMedicine(index)}
+                        data-testid={`button-remove-medicine-${index}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`medicines.${index}.name`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Medicine Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., Arnica 30C" 
+                              data-testid={`input-medicine-name-${index}`}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`medicines.${index}.dosage`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dosage</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., 5 drops" 
+                              data-testid={`input-medicine-dosage-${index}`}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`medicines.${index}.frequency`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Frequency</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., 3 times a day" 
+                              data-testid={`input-medicine-frequency-${index}`}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`medicines.${index}.duration`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., 15 days" 
+                              data-testid={`input-medicine-duration-${index}`}
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Special Instructions (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any special instructions for the patient"
+                        className="resize-none"
+                        data-testid="input-instructions"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="followUpDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Follow-up Date (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        data-testid="input-followup-date"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="button-submit-prescription">
+              {isSubmitting ? "Saving..." : isEditing ? "Update Prescription" : "Create Prescription"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}

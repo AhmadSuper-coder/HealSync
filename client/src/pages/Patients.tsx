@@ -1,1 +1,56 @@
-import { useState } from \"react\";\nimport { PatientForm } from \"@/components/PatientForm\";\nimport { PatientList } from \"@/components/PatientList\";\nimport { FileUpload } from \"@/components/FileUpload\";\nimport { Button } from \"@/components/ui/button\";\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";\nimport { Plus } from \"lucide-react\";\n\nexport default function Patients() {\n  const [activeTab, setActiveTab] = useState(\"list\");\n\n  return (\n    <div className=\"space-y-6\">\n      <div className=\"flex justify-between items-center\">\n        <div>\n          <h1 className=\"text-3xl font-bold tracking-tight\">Patient Management</h1>\n          <p className=\"text-muted-foreground\">\n            Manage patient records, medical history, and files.\n          </p>\n        </div>\n        <Button\n          onClick={() => setActiveTab(\"register\")}\n          data-testid=\"button-new-patient\"\n        >\n          <Plus className=\"mr-2 h-4 w-4\" />\n          New Patient\n        </Button>\n      </div>\n\n      <Tabs value={activeTab} onValueChange={setActiveTab}>\n        <TabsList>\n          <TabsTrigger value=\"list\" data-testid=\"tab-patient-list\">Patient List</TabsTrigger>\n          <TabsTrigger value=\"register\" data-testid=\"tab-register-patient\">Register Patient</TabsTrigger>\n          <TabsTrigger value=\"files\" data-testid=\"tab-patient-files\">Patient Files</TabsTrigger>\n        </TabsList>\n\n        <TabsContent value=\"list\" className=\"space-y-6\">\n          <PatientList />\n        </TabsContent>\n\n        <TabsContent value=\"register\" className=\"space-y-6\">\n          <PatientForm onSubmit={(data) => {\n            console.log('Patient registered:', data);\n            setActiveTab(\"list\");\n          }} />\n        </TabsContent>\n\n        <TabsContent value=\"files\" className=\"space-y-6\">\n          <FileUpload onUpload={(files) => {\n            console.log('Files uploaded:', files);\n          }} />\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n}\n
+import { useState } from "react";
+import { PatientForm } from "@/components/PatientForm";
+import { PatientList } from "@/components/PatientList";
+import { FileUpload } from "@/components/FileUpload";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus } from "lucide-react";
+
+export default function Patients() {
+  const [activeTab, setActiveTab] = useState("list");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Patient Management</h1>
+          <p className="text-muted-foreground">
+            Manage patient records, medical history, and files.
+          </p>
+        </div>
+        <Button
+          onClick={() => setActiveTab("register")}
+          data-testid="button-new-patient"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Patient
+        </Button>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="list" data-testid="tab-patient-list">Patient List</TabsTrigger>
+          <TabsTrigger value="register" data-testid="tab-register-patient">Register Patient</TabsTrigger>
+          <TabsTrigger value="files" data-testid="tab-patient-files">Patient Files</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
+          <PatientList />
+        </TabsContent>
+
+        <TabsContent value="register" className="space-y-6">
+          <PatientForm onSubmit={(data) => {
+            console.log('Patient registered:', data);
+            setActiveTab("list");
+          }} />
+        </TabsContent>
+
+        <TabsContent value="files" className="space-y-6">
+          <FileUpload onUpload={(files) => {
+            console.log('Files uploaded:', files);
+          }} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
