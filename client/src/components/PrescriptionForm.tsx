@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { PatientDropdown } from "./PatientDropdown";
 
 const medicineSchema = z.object({
   name: z.string().min(1, "Medicine name is required"),
@@ -25,7 +26,7 @@ const medicineSchema = z.object({
 });
 
 const prescriptionFormSchema = z.object({
-  patientName: z.string().min(2, "Patient name is required"),
+  patientId: z.string().min(1, "Patient selection is required"),
   medicines: z.array(medicineSchema).min(1, "At least one medicine is required"),
   instructions: z.string().optional(),
   followUpDate: z.string().optional(),
@@ -33,20 +34,29 @@ const prescriptionFormSchema = z.object({
 
 type PrescriptionFormData = z.infer<typeof prescriptionFormSchema>;
 
+interface Patient {
+  id: string;
+  name: string;
+  mobile: string;
+  age: number;
+  gender: string;
+}
+
 interface PrescriptionFormProps {
-  onSubmit?: (data: PrescriptionFormData) => void;
+  onSubmit?: (data: PrescriptionFormData & { patientName: string; patientMobile: string }) => void;
   initialData?: Partial<PrescriptionFormData>;
   isEditing?: boolean;
 }
 
 export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: PrescriptionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
 
   const form = useForm<PrescriptionFormData>({
     resolver: zodResolver(prescriptionFormSchema),
     defaultValues: {
-      patientName: initialData?.patientName || "",
+      patientId: initialData?.patientId || "",
       medicines: initialData?.medicines || [{ name: "", dosage: "", frequency: "", duration: "" }],
       instructions: initialData?.instructions || "",
       followUpDate: initialData?.followUpDate || "",
@@ -58,22 +68,57 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
     name: "medicines",
   });
 
+  const handlePatientSelect = (patient: Patient | null) => {
+    setSelectedPatient(patient);
+    form.setValue("patientId", patient?.id || "");
+    if (patient) {
+      form.clearErrors("patientId");
+    }
+  };
+
   const handleSubmit = async (data: PrescriptionFormData) => {
+    if (!selectedPatient) {
+      toast({
+        title: "Error",
+        description: "Please select a patient first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      console.log('Prescription created:', data);
-      onSubmit?.(data);
-      toast({
-        title: isEditing ? "Prescription Updated" : "Prescription Created",
-        description: `Prescription for ${data.patientName} has been ${isEditing ? 'updated' : 'created'}.`,
+      const prescriptionData = {
+        ...data,
+        patientName: selectedPatient.name,
+        patientMobile: selectedPatient.mobile,
+      };
+
+      // Create prescription via API
+      const response = await fetch('/api/prescriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prescriptionData),
       });
-      
-      if (!isEditing) {
-        form.reset();
-        // Reset to single medicine entry
-        form.setValue("medicines", [{ name: "", dosage: "", frequency: "", duration: "" }]);
+
+      if (response.ok) {
+        onSubmit?.(prescriptionData);
+        toast({
+          title: isEditing ? "Prescription Updated" : "Prescription Created",
+          description: `Prescription for ${selectedPatient.name} has been ${isEditing ? 'updated' : 'created'}.`,
+        });
+        
+        if (!isEditing) {
+          form.reset();
+          setSelectedPatient(null);
+          // Reset to single medicine entry
+          form.setValue("medicines", [{ name: "", dosage: "", frequency: "", duration: "" }]);
+        }
+      } else {
+        throw new Error('Failed to create prescription');
       }
     } catch (error) {
+      console.error('Prescription submission error:', error);
       toast({
         title: "Error",
         description: `Failed to ${isEditing ? 'update' : 'create'} prescription. Please try again.`,
@@ -102,20 +147,34 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Patient Information */}
+            {/* Patient Selection */}
             <FormField
               control={form.control}
-              name="patientName"
+              name="patientId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Patient Name</FormLabel>
+                  <FormLabel>Select Patient</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter patient name" data-testid="input-patient-name" {...field} />
+                    <PatientDropdown
+                      value={field.value}
+                      onSelect={handlePatientSelect}
+                      placeholder="Search and select patient..."
+                      testId="patient-dropdown-prescription"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Selected Patient Info */}
+            {selectedPatient && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Selected Patient:</p>
+                <p className="font-medium">{selectedPatient.mobile} - {selectedPatient.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedPatient.age} years, {selectedPatient.gender}</p>
+              </div>
+            )}
 
             {/* Medicines Section */}
             <div className="space-y-4">

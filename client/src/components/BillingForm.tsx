@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { PatientDropdown } from "./PatientDropdown";
 
 const billingFormSchema = z.object({
-  patientName: z.string().min(2, "Patient name is required"),
+  patientId: z.string().min(1, "Patient selection is required"),
   amount: z.string().min(1, "Amount is required"),
   description: z.string().min(1, "Description is required"),
   paymentMethod: z.string().optional(),
@@ -32,38 +33,71 @@ const billingFormSchema = z.object({
 
 type BillingFormData = z.infer<typeof billingFormSchema>;
 
+interface Patient {
+  id: string;
+  name: string;
+  mobile: string;
+  age: number;
+  gender: string;
+}
+
 interface BillingFormProps {
-  onSubmit?: (data: BillingFormData) => void;
+  onSubmit?: (data: BillingFormData & { patientName: string; patientMobile: string }) => void;
   initialData?: Partial<BillingFormData>;
   isEditing?: boolean;
 }
 
 export function BillingForm({ onSubmit, initialData, isEditing = false }: BillingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
 
   const form = useForm<BillingFormData>({
     resolver: zodResolver(billingFormSchema),
     defaultValues: {
-      patientName: initialData?.patientName || "",
+      patientId: initialData?.patientId || "",
       amount: initialData?.amount || "",
       description: initialData?.description || "",
       paymentMethod: initialData?.paymentMethod || "",
     },
   });
 
+  const handlePatientSelect = (patient: Patient | null) => {
+    setSelectedPatient(patient);
+    form.setValue("patientId", patient?.id || "");
+    if (patient) {
+      form.clearErrors("patientId");
+    }
+  };
+
   const handleSubmit = async (data: BillingFormData) => {
+    if (!selectedPatient) {
+      toast({
+        title: "Error",
+        description: "Please select a patient first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      console.log('Bill generated:', data);
-      onSubmit?.(data);
+      const billingData = {
+        ...data,
+        patientName: selectedPatient.name,
+        patientMobile: selectedPatient.mobile,
+      };
+
+      console.log('Bill generated:', billingData);
+      onSubmit?.(billingData);
       toast({
         title: isEditing ? "Bill Updated" : "Bill Generated",
-        description: `Bill for ${data.patientName} has been ${isEditing ? 'updated' : 'generated'}.`,
+        description: `Bill for ${selectedPatient.name} has been ${isEditing ? 'updated' : 'generated'}.`,
       });
       
       if (!isEditing) {
         form.reset();
+        setSelectedPatient(null);
       }
     } catch (error) {
       toast({
@@ -84,19 +118,34 @@ export function BillingForm({ onSubmit, initialData, isEditing = false }: Billin
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Patient Selection */}
             <FormField
               control={form.control}
-              name="patientName"
+              name="patientId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Patient Name</FormLabel>
+                  <FormLabel>Select Patient</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter patient name" data-testid="input-patient-name" {...field} />
+                    <PatientDropdown
+                      value={field.value}
+                      onSelect={handlePatientSelect}
+                      placeholder="Search and select patient..."
+                      testId="patient-dropdown-billing"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Selected Patient Info */}
+            {selectedPatient && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Selected Patient:</p>
+                <p className="font-medium">{selectedPatient.mobile} - {selectedPatient.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedPatient.age} years, {selectedPatient.gender}</p>
+              </div>
+            )}
 
             <FormField
               control={form.control}
