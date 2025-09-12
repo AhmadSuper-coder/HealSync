@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
+import { PrescriptionDetails } from "@/components/PrescriptionDetails";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Plus, Eye, Download, FileText } from "lucide-react";
 interface Prescription {
   id: string;
   patientName: string;
+  patientMobile: string;
   date: string;
   status: "active" | "completed" | "cancelled";
   medicineCount: number;
@@ -27,6 +29,7 @@ const mockPrescriptions: Prescription[] = [
   {
     id: "1",
     patientName: "Rajesh Sharma",
+    patientMobile: "+91 9876543210",
     date: "2024-01-15",
     status: "active",
     medicineCount: 3,
@@ -34,6 +37,7 @@ const mockPrescriptions: Prescription[] = [
   {
     id: "2",
     patientName: "Priya Patel",
+    patientMobile: "+91 9876543211",
     date: "2024-01-14",
     status: "completed",
     medicineCount: 2,
@@ -41,6 +45,7 @@ const mockPrescriptions: Prescription[] = [
   {
     id: "3",
     patientName: "Amit Kumar",
+    patientMobile: "+91 9876543212",
     date: "2024-01-13",
     status: "active",
     medicineCount: 4,
@@ -49,13 +54,17 @@ const mockPrescriptions: Prescription[] = [
 
 export default function Prescriptions() {
   const [activeTab, setActiveTab] = useState("list");
+  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<string>("");
+  const [isPrescriptionDetailsOpen, setIsPrescriptionDetailsOpen] = useState(false);
 
   const handleViewPrescription = (prescription: Prescription) => {
-    console.log('View prescription:', prescription.id);
+    setSelectedPrescriptionId(prescription.id);
+    setIsPrescriptionDetailsOpen(true);
   };
 
   const handleDownloadPrescription = (prescription: Prescription) => {
     console.log('Download prescription:', prescription.id);
+    // TODO: Implement PDF download functionality
   };
 
   const getStatusColor = (status: string) => {
@@ -135,35 +144,44 @@ export default function Prescriptions() {
                   <TableRow>
                     <TableHead>Patient</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Medicines</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {mockPrescriptions.map((prescription) => (
-                    <TableRow key={prescription.id}>
-                      <TableCell className="font-medium">{prescription.patientName}</TableCell>
+                    <TableRow key={prescription.id} data-testid={`prescription-row-${prescription.id}`}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{prescription.patientName}</p>
+                          <p className="text-sm text-muted-foreground">{prescription.patientMobile}</p>
+                        </div>
+                      </TableCell>
                       <TableCell>{prescription.date}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {prescription.medicineCount} medicine{prescription.medicineCount !== 1 ? 's' : ''}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={getStatusColor(prescription.status) as any}>
                           {prescription.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{prescription.medicineCount} medicines</TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
+                        <div className="flex gap-2">
                           <Button
-                            size="sm"
                             variant="outline"
+                            size="sm"
                             onClick={() => handleViewPrescription(prescription)}
                             data-testid={`button-view-prescription-${prescription.id}`}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
-                            size="sm"
                             variant="outline"
+                            size="sm"
                             onClick={() => handleDownloadPrescription(prescription)}
                             data-testid={`button-download-prescription-${prescription.id}`}
                           >
@@ -175,17 +193,40 @@ export default function Prescriptions() {
                   ))}
                 </TableBody>
               </Table>
+
+              {mockPrescriptions.length === 0 && (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No prescriptions found.</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => setActiveTab("create")}
+                  >
+                    Create First Prescription
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="create" className="space-y-6">
-          <PrescriptionForm onSubmit={(data) => {
-            console.log('Prescription created:', data);
-            setActiveTab("list");
-          }} />
+          <PrescriptionForm
+            onSubmit={(data) => {
+              console.log('New prescription:', data);
+              setActiveTab("list");
+            }}
+          />
         </TabsContent>
       </Tabs>
+
+      {/* Prescription Details Dialog */}
+      <PrescriptionDetails
+        prescriptionId={selectedPrescriptionId}
+        open={isPrescriptionDetailsOpen}
+        onOpenChange={setIsPrescriptionDetailsOpen}
+      />
     </div>
   );
 }

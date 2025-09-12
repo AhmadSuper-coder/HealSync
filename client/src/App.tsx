@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Dashboard from "@/pages/Dashboard";
 import Patients from "@/pages/Patients";
+import PatientDetails from "@/pages/PatientDetails";
+import EditPatient from "@/pages/EditPatient";
 import Appointments from "@/pages/Appointments";
 import Prescriptions from "@/pages/Prescriptions";
 import Billing from "@/pages/Billing";
@@ -22,6 +24,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/patients" component={Patients} />
+      <Route path="/patients/:id/edit" component={EditPatient} />
+      <Route path="/patients/:id" component={PatientDetails} />
       <Route path="/appointments" component={Appointments} />
       <Route path="/prescriptions" component={Prescriptions} />
       <Route path="/billing" component={Billing} />
