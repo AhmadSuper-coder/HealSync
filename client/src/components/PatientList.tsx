@@ -1,1 +1,196 @@
-import { useState } from \"react\";\nimport { Search, Edit, Eye, FileText, Phone } from \"lucide-react\";\nimport { Button } from \"@/components/ui/button\";\nimport { Input } from \"@/components/ui/input\";\nimport {\n  Table,\n  TableBody,\n  TableCell,\n  TableHead,\n  TableHeader,\n  TableRow,\n} from \"@/components/ui/table\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Badge } from \"@/components/ui/badge\";\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuItem,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\";\n\ninterface Patient {\n  id: string;\n  name: string;\n  age: number;\n  gender: string;\n  phone: string;\n  lastVisit: string;\n  status: \"active\" | \"inactive\";\n}\n\n// todo: remove mock functionality\nconst mockPatients: Patient[] = [\n  {\n    id: \"1\",\n    name: \"Rajesh Sharma\",\n    age: 45,\n    gender: \"Male\",\n    phone: \"+91 9876543210\",\n    lastVisit: \"2024-01-15\",\n    status: \"active\",\n  },\n  {\n    id: \"2\",\n    name: \"Priya Patel\",\n    age: 32,\n    gender: \"Female\",\n    phone: \"+91 9876543211\",\n    lastVisit: \"2024-01-10\",\n    status: \"active\",\n  },\n  {\n    id: \"3\",\n    name: \"Amit Kumar\",\n    age: 28,\n    gender: \"Male\",\n    phone: \"+91 9876543212\",\n    lastVisit: \"2023-12-20\",\n    status: \"inactive\",\n  },\n];\n\nexport function PatientList() {\n  const [searchTerm, setSearchTerm] = useState(\"\");\n  const [patients] = useState<Patient[]>(mockPatients);\n\n  const filteredPatients = patients.filter(\n    (patient) =>\n      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||\n      patient.phone.includes(searchTerm)\n  );\n\n  const handleViewPatient = (patient: Patient) => {\n    console.log('View patient:', patient.id);\n  };\n\n  const handleEditPatient = (patient: Patient) => {\n    console.log('Edit patient:', patient.id);\n  };\n\n  const handleCallPatient = (patient: Patient) => {\n    console.log('Call patient:', patient.phone);\n  };\n\n  const handleViewHistory = (patient: Patient) => {\n    console.log('View history for patient:', patient.id);\n  };\n\n  return (\n    <Card>\n      <CardHeader>\n        <CardTitle>Patient Records</CardTitle>\n        <div className=\"flex items-center space-x-2\">\n          <div className=\"relative flex-1\">\n            <Search className=\"absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground\" />\n            <Input\n              placeholder=\"Search patients by name or phone...\"\n              value={searchTerm}\n              onChange={(e) => setSearchTerm(e.target.value)}\n              className=\"pl-8\"\n              data-testid=\"input-search-patients\"\n            />\n          </div>\n        </div>\n      </CardHeader>\n      <CardContent>\n        <div className=\"rounded-md border\">\n          <Table>\n            <TableHeader>\n              <TableRow>\n                <TableHead>Name</TableHead>\n                <TableHead>Age</TableHead>\n                <TableHead>Gender</TableHead>\n                <TableHead>Phone</TableHead>\n                <TableHead>Last Visit</TableHead>\n                <TableHead>Status</TableHead>\n                <TableHead className=\"text-right\">Actions</TableHead>\n              </TableRow>\n            </TableHeader>\n            <TableBody>\n              {filteredPatients.map((patient) => (\n                <TableRow key={patient.id}>\n                  <TableCell className=\"font-medium\">{patient.name}</TableCell>\n                  <TableCell>{patient.age}</TableCell>\n                  <TableCell>{patient.gender}</TableCell>\n                  <TableCell>{patient.phone}</TableCell>\n                  <TableCell>{patient.lastVisit}</TableCell>\n                  <TableCell>\n                    <Badge\n                      variant={patient.status === \"active\" ? \"default\" : \"secondary\"}\n                      data-testid={`badge-status-${patient.id}`}\n                    >\n                      {patient.status}\n                    </Badge>\n                  </TableCell>\n                  <TableCell className=\"text-right\">\n                    <DropdownMenu>\n                      <DropdownMenuTrigger asChild>\n                        <Button variant=\"ghost\" size=\"sm\" data-testid={`button-actions-${patient.id}`}>\n                          Actions\n                        </Button>\n                      </DropdownMenuTrigger>\n                      <DropdownMenuContent align=\"end\">\n                        <DropdownMenuItem onClick={() => handleViewPatient(patient)}>\n                          <Eye className=\"mr-2 h-4 w-4\" />\n                          View Details\n                        </DropdownMenuItem>\n                        <DropdownMenuItem onClick={() => handleEditPatient(patient)}>\n                          <Edit className=\"mr-2 h-4 w-4\" />\n                          Edit\n                        </DropdownMenuItem>\n                        <DropdownMenuItem onClick={() => handleViewHistory(patient)}>\n                          <FileText className=\"mr-2 h-4 w-4\" />\n                          View History\n                        </DropdownMenuItem>\n                        <DropdownMenuItem onClick={() => handleCallPatient(patient)}>\n                          <Phone className=\"mr-2 h-4 w-4\" />\n                          Call Patient\n                        </DropdownMenuItem>\n                      </DropdownMenuContent>\n                    </DropdownMenu>\n                  </TableCell>\n                </TableRow>\n              ))}\n            </TableBody>\n          </Table>\n        </div>\n      </CardContent>\n    </Card>\n  );\n}\n
+import { useState } from "react";
+import { Search, Edit, Eye, FileText, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+interface Patient {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  phone: string;
+  lastVisit: string;
+  status: "active" | "inactive";
+}
+
+// todo: remove mock functionality
+const mockPatients: Patient[] = [
+  {
+    id: "1",
+    name: "Rajesh Sharma",
+    age: 45,
+    gender: "Male",
+    phone: "+91 9876543210",
+    lastVisit: "2024-01-15",
+    status: "active",
+  },
+  {
+    id: "2",
+    name: "Priya Patel",
+    age: 32,
+    gender: "Female",
+    phone: "+91 9876543211",
+    lastVisit: "2024-01-10",
+    status: "active",
+  },
+  {
+    id: "3",
+    name: "Amit Kumar",
+    age: 28,
+    gender: "Male",
+    phone: "+91 9876543212",
+    lastVisit: "2023-12-20",
+    status: "inactive",
+  },
+  {
+    id: "4",
+    name: "Sunita Singh",
+    age: 38,
+    gender: "Female",
+    phone: "+91 9876543213",
+    lastVisit: "2024-01-12",
+    status: "active",
+  },
+  {
+    id: "5",
+    name: "Vikram Patel",
+    age: 52,
+    gender: "Male",
+    phone: "+91 9876543214",
+    lastVisit: "2024-01-08",
+    status: "active",
+  },
+];
+
+export function PatientList() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [patients] = useState<Patient[]>(mockPatients);
+
+  const filteredPatients = patients.filter(
+    (patient) =>
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.phone.includes(searchTerm)
+  );
+
+  const handleViewPatient = (patient: Patient) => {
+    console.log('View patient:', patient.id);
+  };
+
+  const handleEditPatient = (patient: Patient) => {
+    console.log('Edit patient:', patient.id);
+  };
+
+  const handleCallPatient = (patient: Patient) => {
+    console.log('Call patient:', patient.phone);
+  };
+
+  const handleViewHistory = (patient: Patient) => {
+    console.log('View patient medical history:', patient.id);
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === "active" ? "default" : "secondary";
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Patient List ({filteredPatients.length})</CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search patients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+                data-testid="input-search-patients"
+              />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Age</TableHead>
+              <TableHead>Gender</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Last Visit</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredPatients.map((patient) => (
+              <TableRow key={patient.id} data-testid={`patient-row-${patient.id}`}>
+                <TableCell className="font-medium">{patient.name}</TableCell>
+                <TableCell>{patient.age}</TableCell>
+                <TableCell>{patient.gender}</TableCell>
+                <TableCell>{patient.phone}</TableCell>
+                <TableCell>{patient.lastVisit}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusColor(patient.status) as any}>
+                    {patient.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" data-testid={`button-actions-${patient.id}`}>
+                        Actions
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleViewPatient(patient)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditPatient(patient)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Patient
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCallPatient(patient)}>
+                        <Phone className="mr-2 h-4 w-4" />
+                        Call Patient
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewHistory(patient)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Medical History
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        
+        {filteredPatients.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No patients found matching your search.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

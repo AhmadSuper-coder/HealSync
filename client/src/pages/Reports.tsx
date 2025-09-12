@@ -1,1 +1,213 @@
-import { ReportsChart } from \"@/components/ReportsChart\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from \"@/components/ui/select\";\nimport { DatePickerWithRange } from \"@/components/ui/date-picker\";\nimport { Download, TrendingUp, Users, Calendar, Receipt } from \"lucide-react\";\nimport { useState } from \"react\";\n\ninterface ReportMetric {\n  title: string;\n  value: string;\n  change: string;\n  changeType: \"positive\" | \"negative\" | \"neutral\";\n  icon: React.ComponentType<{ className?: string }>;\n}\n\nexport default function Reports() {\n  const [reportType, setReportType] = useState(\"monthly\");\n\n  // todo: remove mock functionality\n  const metrics: ReportMetric[] = [\n    {\n      title: \"New Patients\",\n      value: \"127\",\n      change: \"+12% from last month\",\n      changeType: \"positive\",\n      icon: Users,\n    },\n    {\n      title: \"Appointments Completed\",\n      value: \"342\",\n      change: \"+8% from last month\",\n      changeType: \"positive\",\n      icon: Calendar,\n    },\n    {\n      title: \"Revenue Generated\",\n      value: \"₹1,24,500\",\n      change: \"+15% from last month\",\n      changeType: \"positive\",\n      icon: Receipt,\n    },\n    {\n      title: \"Patient Retention Rate\",\n      value: \"89%\",\n      change: \"+2% from last quarter\",\n      changeType: \"positive\",\n      icon: TrendingUp,\n    },\n  ];\n\n  const handleExportReport = () => {\n    console.log('Export report triggered');\n  };\n\n  const getChangeColor = (changeType: string) => {\n    switch (changeType) {\n      case \"positive\":\n        return \"text-chart-4\";\n      case \"negative\":\n        return \"text-destructive\";\n      default:\n        return \"text-muted-foreground\";\n    }\n  };\n\n  return (\n    <div className=\"space-y-6\">\n      <div className=\"flex justify-between items-center\">\n        <div>\n          <h1 className=\"text-3xl font-bold tracking-tight\">Reports & Analytics</h1>\n          <p className=\"text-muted-foreground\">\n            Track clinic performance, patient analytics, and revenue insights.\n          </p>\n        </div>\n        <Button onClick={handleExportReport} data-testid=\"button-export-report\">\n          <Download className=\"mr-2 h-4 w-4\" />\n          Export Report\n        </Button>\n      </div>\n\n      {/* Report Filters */}\n      <Card>\n        <CardHeader>\n          <CardTitle>Report Filters</CardTitle>\n        </CardHeader>\n        <CardContent>\n          <div className=\"flex flex-wrap gap-4\">\n            <div className=\"flex-1 min-w-[200px]\">\n              <label className=\"text-sm font-medium mb-2 block\">Report Type</label>\n              <Select value={reportType} onValueChange={setReportType}>\n                <SelectTrigger data-testid=\"select-report-type\">\n                  <SelectValue />\n                </SelectTrigger>\n                <SelectContent>\n                  <SelectItem value=\"daily\">Daily Report</SelectItem>\n                  <SelectItem value=\"weekly\">Weekly Report</SelectItem>\n                  <SelectItem value=\"monthly\">Monthly Report</SelectItem>\n                  <SelectItem value=\"quarterly\">Quarterly Report</SelectItem>\n                  <SelectItem value=\"yearly\">Yearly Report</SelectItem>\n                </SelectContent>\n              </Select>\n            </div>\n            <div className=\"flex-1 min-w-[250px]\">\n              <label className=\"text-sm font-medium mb-2 block\">Date Range</label>\n              <DatePickerWithRange />\n            </div>\n            <div className=\"flex items-end\">\n              <Button variant=\"outline\" data-testid=\"button-apply-filters\">\n                Apply Filters\n              </Button>\n            </div>\n          </div>\n        </CardContent>\n      </Card>\n\n      {/* Key Metrics */}\n      <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4\">\n        {metrics.map((metric, index) => {\n          const Icon = metric.icon;\n          return (\n            <Card key={index}>\n              <CardHeader className=\"flex flex-row items-center justify-between space-y-0 pb-2\">\n                <CardTitle className=\"text-sm font-medium\">{metric.title}</CardTitle>\n                <Icon className=\"h-4 w-4 text-muted-foreground\" />\n              </CardHeader>\n              <CardContent>\n                <div className=\"text-2xl font-bold\">{metric.value}</div>\n                <p className={`text-xs ${getChangeColor(metric.changeType)}`}>\n                  {metric.change}\n                </p>\n              </CardContent>\n            </Card>\n          );\n        })}\n      </div>\n\n      {/* Main Chart */}\n      <ReportsChart />\n\n      {/* Additional Reports */}\n      <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n        <Card>\n          <CardHeader>\n            <CardTitle>Top Performing Days</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"space-y-4\">\n              {[\n                { day: \"Monday\", appointments: 45, revenue: \"₹18,000\" },\n                { day: \"Tuesday\", appointments: 38, revenue: \"₹15,200\" },\n                { day: \"Wednesday\", appointments: 42, revenue: \"₹16,800\" },\n                { day: \"Thursday\", appointments: 35, revenue: \"₹14,000\" },\n                { day: \"Friday\", appointments: 40, revenue: \"₹16,000\" },\n              ].map((item, index) => (\n                <div key={index} className=\"flex items-center justify-between p-3 border rounded-lg\">\n                  <div>\n                    <p className=\"font-medium\">{item.day}</p>\n                    <p className=\"text-sm text-muted-foreground\">{item.appointments} appointments</p>\n                  </div>\n                  <div className=\"text-right\">\n                    <p className=\"font-medium\">{item.revenue}</p>\n                  </div>\n                </div>\n              ))}\n            </div>\n          </CardContent>\n        </Card>\n\n        <Card>\n          <CardHeader>\n            <CardTitle>Patient Demographics</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"space-y-4\">\n              {[\n                { category: \"Age 18-30\", count: 245, percentage: 28 },\n                { category: \"Age 31-45\", count: 312, percentage: 36 },\n                { category: \"Age 46-60\", count: 189, percentage: 22 },\n                { category: \"Age 60+\", count: 125, percentage: 14 },\n              ].map((item, index) => (\n                <div key={index} className=\"flex items-center justify-between\">\n                  <div>\n                    <p className=\"font-medium\">{item.category}</p>\n                    <p className=\"text-sm text-muted-foreground\">{item.count} patients</p>\n                  </div>\n                  <div className=\"text-right\">\n                    <p className=\"font-medium\">{item.percentage}%</p>\n                    <div className=\"w-20 h-2 bg-muted rounded-full overflow-hidden\">\n                      <div \n                        className=\"h-full bg-primary rounded-full\" \n                        style={{ width: `${item.percentage}%` }}\n                      />\n                    </div>\n                  </div>\n                </div>\n              ))}\n            </div>\n          </CardContent>\n        </Card>\n      </div>\n    </div>\n  );\n}\n
+import { ReportsChart } from "@/components/ReportsChart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/ui/date-picker";
+import { Download, TrendingUp, Users, Calendar, Receipt } from "lucide-react";
+import { useState } from "react";
+
+interface ReportMetric {
+  title: string;
+  value: string;
+  change: string;
+  changeType: "positive" | "negative" | "neutral";
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export default function Reports() {
+  const [reportType, setReportType] = useState("monthly");
+
+  // todo: remove mock functionality
+  const metrics: ReportMetric[] = [
+    {
+      title: "New Patients",
+      value: "127",
+      change: "+12% from last month",
+      changeType: "positive",
+      icon: Users,
+    },
+    {
+      title: "Appointments Completed",
+      value: "342",
+      change: "+8% from last month",
+      changeType: "positive",
+      icon: Calendar,
+    },
+    {
+      title: "Revenue Generated",
+      value: "₹1,24,500",
+      change: "+15% from last month",
+      changeType: "positive",
+      icon: Receipt,
+    },
+    {
+      title: "Patient Retention Rate",
+      value: "89%",
+      change: "+2% from last quarter",
+      changeType: "positive",
+      icon: TrendingUp,
+    },
+  ];
+
+  const handleExportReport = () => {
+    console.log('Export report triggered');
+  };
+
+  const getChangeColor = (changeType: string) => {
+    switch (changeType) {
+      case "positive":
+        return "text-green-600";
+      case "negative":
+        return "text-red-600";
+      default:
+        return "text-muted-foreground";
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Reports & Analytics</h1>
+          <p className="text-muted-foreground">
+            Comprehensive insights into your clinic performance.
+          </p>
+        </div>
+        <Button onClick={handleExportReport} data-testid="button-export-report">
+          <Download className="mr-2 h-4 w-4" />
+          Export Report
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Report Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-48">
+              <label className="text-sm font-medium mb-2 block">Report Type</label>
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger data-testid="select-report-type">
+                  <SelectValue placeholder="Select report type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily Report</SelectItem>
+                  <SelectItem value="weekly">Weekly Report</SelectItem>
+                  <SelectItem value="monthly">Monthly Report</SelectItem>
+                  <SelectItem value="quarterly">Quarterly Report</SelectItem>
+                  <SelectItem value="yearly">Yearly Report</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-80">
+              <label className="text-sm font-medium mb-2 block">Date Range</label>
+              <DatePickerWithRange />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                    <p className="text-2xl font-bold">{metric.value}</p>
+                    <p className={`text-xs ${getChangeColor(metric.changeType)}`}>
+                      {metric.change}
+                    </p>
+                  </div>
+                  <Icon className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Analytics Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReportsChart />
+        </CardContent>
+      </Card>
+
+      {/* Detailed Reports */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Performing Services</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { service: "General Consultation", revenue: "₹45,600", percentage: 60 },
+                { service: "Follow-up Appointments", revenue: "₹28,400", percentage: 37 },
+                { service: "Prescription Renewals", revenue: "₹12,800", percentage: 17 },
+                { service: "Health Check-ups", revenue: "₹8,200", percentage: 11 },
+              ].map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{item.service}</p>
+                    <p className="text-sm text-muted-foreground">{item.revenue}</p>
+                  </div>
+                  <div className="w-20 bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full" 
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Patient Demographics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { group: "Adults (25-50 years)", count: 145, percentage: 58 },
+                { group: "Seniors (50+ years)", count: 78, percentage: 31 },
+                { group: "Young Adults (18-25 years)", count: 23, percentage: 9 },
+                { group: "Children (0-18 years)", count: 4, percentage: 2 },
+              ].map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{item.group}</p>
+                    <p className="text-sm text-muted-foreground">{item.count} patients</p>
+                  </div>
+                  <div className="w-20 bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-secondary h-2 rounded-full" 
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

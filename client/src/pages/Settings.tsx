@@ -1,1 +1,367 @@
-import { useState } from \"react\";\nimport { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { z } from \"zod\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Form,\n  FormControl,\n  FormField,\n  FormItem,\n  FormLabel,\n  FormMessage,\n} from \"@/components/ui/form\";\nimport { Input } from \"@/components/ui/input\";\nimport { Textarea } from \"@/components/ui/textarea\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";\nimport { Switch } from \"@/components/ui/switch\";\nimport { Avatar, AvatarFallback, AvatarImage } from \"@/components/ui/avatar\";\nimport { useToast } from \"@/hooks/use-toast\";\nimport { ThemeToggle } from \"@/components/ThemeToggle\";\nimport { Upload, Save, Shield, Bell } from \"lucide-react\";\n\nconst clinicFormSchema = z.object({\n  clinicName: z.string().min(2, \"Clinic name is required\"),\n  doctorName: z.string().min(2, \"Doctor name is required\"),\n  email: z.string().email(\"Invalid email address\"),\n  phone: z.string().min(10, \"Phone number must be at least 10 digits\"),\n  address: z.string().min(5, \"Address is required\"),\n  qualifications: z.string().optional(),\n  specialization: z.string().optional(),\n});\n\ntype ClinicFormData = z.infer<typeof clinicFormSchema>;\n\nexport default function Settings() {\n  const [activeTab, setActiveTab] = useState(\"clinic\");\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const { toast } = useToast();\n\n  // todo: remove mock functionality\n  const [notifications, setNotifications] = useState({\n    emailReminders: true,\n    smsReminders: true,\n    appointmentAlerts: true,\n    paymentAlerts: false,\n    marketingEmails: false,\n  });\n\n  const form = useForm<ClinicFormData>({\n    resolver: zodResolver(clinicFormSchema),\n    defaultValues: {\n      clinicName: \"HomeoClinic Wellness Center\",\n      doctorName: \"Dr. Sarah Johnson\",\n      email: \"dr.sarah@homeoclinic.com\",\n      phone: \"+91 9876543210\",\n      address: \"123 Health Street, Medical District, City - 400001\",\n      qualifications: \"BHMS, MD (Homeopathy)\",\n      specialization: \"General Homeopathy, Chronic Diseases\",\n    },\n  });\n\n  const handleSubmit = async (data: ClinicFormData) => {\n    setIsSubmitting(true);\n    try {\n      console.log('Clinic settings updated:', data);\n      toast({\n        title: \"Settings Updated\",\n        description: \"Your clinic settings have been saved successfully.\",\n      });\n    } catch (error) {\n      toast({\n        title: \"Error\",\n        description: \"Failed to update settings. Please try again.\",\n        variant: \"destructive\",\n      });\n    } finally {\n      setIsSubmitting(false);\n    }\n  };\n\n  const handleLogoUpload = () => {\n    console.log('Logo upload triggered');\n    toast({\n      title: \"Logo Upload\",\n      description: \"Logo upload feature will be implemented.\",\n    });\n  };\n\n  const handleNotificationChange = (key: string, value: boolean) => {\n    setNotifications(prev => ({ ...prev, [key]: value }));\n    toast({\n      title: \"Notification Settings\",\n      description: `${key} has been ${value ? 'enabled' : 'disabled'}.`,\n    });\n  };\n\n  return (\n    <div className=\"space-y-6\">\n      <div>\n        <h1 className=\"text-3xl font-bold tracking-tight\">Settings</h1>\n        <p className=\"text-muted-foreground\">\n          Manage your clinic profile, preferences, and system settings.\n        </p>\n      </div>\n\n      <Tabs value={activeTab} onValueChange={setActiveTab}>\n        <TabsList>\n          <TabsTrigger value=\"clinic\" data-testid=\"tab-clinic-settings\">Clinic Profile</TabsTrigger>\n          <TabsTrigger value=\"notifications\" data-testid=\"tab-notification-settings\">Notifications</TabsTrigger>\n          <TabsTrigger value=\"security\" data-testid=\"tab-security-settings\">Security</TabsTrigger>\n          <TabsTrigger value=\"appearance\" data-testid=\"tab-appearance-settings\">Appearance</TabsTrigger>\n        </TabsList>\n\n        <TabsContent value=\"clinic\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Clinic Information</CardTitle>\n            </CardHeader>\n            <CardContent className=\"space-y-6\">\n              {/* Logo Upload Section */}\n              <div className=\"flex items-center gap-6\">\n                <Avatar className=\"h-20 w-20\">\n                  <AvatarImage src=\"\" />\n                  <AvatarFallback className=\"text-lg\">HC</AvatarFallback>\n                </Avatar>\n                <div>\n                  <h3 className=\"font-medium mb-2\">Clinic Logo</h3>\n                  <Button variant=\"outline\" onClick={handleLogoUpload} data-testid=\"button-upload-logo\">\n                    <Upload className=\"mr-2 h-4 w-4\" />\n                    Upload Logo\n                  </Button>\n                  <p className=\"text-xs text-muted-foreground mt-1\">\n                    Recommended: 200x200px, PNG or JPG\n                  </p>\n                </div>\n              </div>\n\n              <Form {...form}>\n                <form onSubmit={form.handleSubmit(handleSubmit)} className=\"space-y-6\">\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                    <FormField\n                      control={form.control}\n                      name=\"clinicName\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Clinic Name</FormLabel>\n                          <FormControl>\n                            <Input data-testid=\"input-clinic-name\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                    <FormField\n                      control={form.control}\n                      name=\"doctorName\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Doctor Name</FormLabel>\n                          <FormControl>\n                            <Input data-testid=\"input-doctor-name\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                  </div>\n\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                    <FormField\n                      control={form.control}\n                      name=\"email\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Email</FormLabel>\n                          <FormControl>\n                            <Input type=\"email\" data-testid=\"input-email\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                    <FormField\n                      control={form.control}\n                      name=\"phone\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Phone</FormLabel>\n                          <FormControl>\n                            <Input data-testid=\"input-phone\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                  </div>\n\n                  <FormField\n                    control={form.control}\n                    name=\"address\"\n                    render={({ field }) => (\n                      <FormItem>\n                        <FormLabel>Address</FormLabel>\n                        <FormControl>\n                          <Textarea className=\"resize-none\" data-testid=\"input-address\" {...field} />\n                        </FormControl>\n                        <FormMessage />\n                      </FormItem>\n                    )}\n                  />\n\n                  <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n                    <FormField\n                      control={form.control}\n                      name=\"qualifications\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Qualifications</FormLabel>\n                          <FormControl>\n                            <Input data-testid=\"input-qualifications\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                    <FormField\n                      control={form.control}\n                      name=\"specialization\"\n                      render={({ field }) => (\n                        <FormItem>\n                          <FormLabel>Specialization</FormLabel>\n                          <FormControl>\n                            <Input data-testid=\"input-specialization\" {...field} />\n                          </FormControl>\n                          <FormMessage />\n                        </FormItem>\n                      )}\n                    />\n                  </div>\n\n                  <Button type=\"submit\" disabled={isSubmitting} data-testid=\"button-save-clinic\">\n                    <Save className=\"mr-2 h-4 w-4\" />\n                    {isSubmitting ? \"Saving...\" : \"Save Changes\"}\n                  </Button>\n                </form>\n              </Form>\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        <TabsContent value=\"notifications\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <div className=\"flex items-center gap-2\">\n                <Bell className=\"h-5 w-5\" />\n                <CardTitle>Notification Preferences</CardTitle>\n              </div>\n            </CardHeader>\n            <CardContent className=\"space-y-6\">\n              {[\n                { key: 'emailReminders', label: 'Email Reminders', description: 'Receive appointment reminders via email' },\n                { key: 'smsReminders', label: 'SMS Reminders', description: 'Receive appointment reminders via SMS' },\n                { key: 'appointmentAlerts', label: 'Appointment Alerts', description: 'Get notified about new appointments' },\n                { key: 'paymentAlerts', label: 'Payment Alerts', description: 'Receive notifications for payments' },\n                { key: 'marketingEmails', label: 'Marketing Emails', description: 'Receive updates about new features' },\n              ].map((item) => (\n                <div key={item.key} className=\"flex items-center justify-between p-4 border rounded-lg\">\n                  <div>\n                    <h4 className=\"font-medium\">{item.label}</h4>\n                    <p className=\"text-sm text-muted-foreground\">{item.description}</p>\n                  </div>\n                  <Switch\n                    checked={notifications[item.key as keyof typeof notifications]}\n                    onCheckedChange={(value) => handleNotificationChange(item.key, value)}\n                    data-testid={`switch-${item.key}`}\n                  />\n                </div>\n              ))}\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        <TabsContent value=\"security\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <div className=\"flex items-center gap-2\">\n                <Shield className=\"h-5 w-5\" />\n                <CardTitle>Security Settings</CardTitle>\n              </div>\n            </CardHeader>\n            <CardContent className=\"space-y-6\">\n              <div className=\"space-y-4\">\n                <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                  <div>\n                    <h4 className=\"font-medium\">Change Password</h4>\n                    <p className=\"text-sm text-muted-foreground\">Update your account password</p>\n                  </div>\n                  <Button variant=\"outline\" data-testid=\"button-change-password\">\n                    Change Password\n                  </Button>\n                </div>\n                \n                <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                  <div>\n                    <h4 className=\"font-medium\">Two-Factor Authentication</h4>\n                    <p className=\"text-sm text-muted-foreground\">Add an extra layer of security</p>\n                  </div>\n                  <Button variant=\"outline\" data-testid=\"button-setup-2fa\">\n                    Setup 2FA\n                  </Button>\n                </div>\n                \n                <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                  <div>\n                    <h4 className=\"font-medium\">Data Backup</h4>\n                    <p className=\"text-sm text-muted-foreground\">Download your clinic data</p>\n                  </div>\n                  <Button variant=\"outline\" data-testid=\"button-backup-data\">\n                    Download Backup\n                  </Button>\n                </div>\n              </div>\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        <TabsContent value=\"appearance\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Appearance Settings</CardTitle>\n            </CardHeader>\n            <CardContent className=\"space-y-6\">\n              <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                <div>\n                  <h4 className=\"font-medium\">Theme</h4>\n                  <p className=\"text-sm text-muted-foreground\">Switch between light and dark mode</p>\n                </div>\n                <ThemeToggle />\n              </div>\n              \n              <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                <div>\n                  <h4 className=\"font-medium\">Language</h4>\n                  <p className=\"text-sm text-muted-foreground\">Choose your preferred language</p>\n                </div>\n                <Button variant=\"outline\" data-testid=\"button-change-language\">\n                  English\n                </Button>\n              </div>\n              \n              <div className=\"flex items-center justify-between p-4 border rounded-lg\">\n                <div>\n                  <h4 className=\"font-medium\">Time Zone</h4>\n                  <p className=\"text-sm text-muted-foreground\">Set your local time zone</p>\n                </div>\n                <Button variant=\"outline\" data-testid=\"button-change-timezone\">\n                  UTC +05:30\n                </Button>\n              </div>\n            </CardContent>\n          </Card>\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n}\n
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Upload, Save, Shield, Bell } from "lucide-react";
+
+const clinicFormSchema = z.object({
+  clinicName: z.string().min(2, "Clinic name is required"),
+  doctorName: z.string().min(2, "Doctor name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  address: z.string().min(5, "Address is required"),
+  qualifications: z.string().optional(),
+  specialization: z.string().optional(),
+});
+
+type ClinicFormData = z.infer<typeof clinicFormSchema>;
+
+export default function Settings() {
+  const [activeTab, setActiveTab] = useState("clinic");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  // todo: remove mock functionality
+  const [notifications, setNotifications] = useState({
+    emailReminders: true,
+    smsReminders: true,
+    appointmentAlerts: true,
+    paymentAlerts: false,
+    marketingEmails: false,
+  });
+
+  const form = useForm<ClinicFormData>({
+    resolver: zodResolver(clinicFormSchema),
+    defaultValues: {
+      clinicName: "HomeoClinic Wellness Center",
+      doctorName: "Dr. Sarah Johnson",
+      email: "dr.sarah@homeoclinic.com",
+      phone: "+91 9876543210",
+      address: "123 Health Street, Medical District, City - 400001",
+      qualifications: "BHMS, MD (Homeopathy)",
+      specialization: "General Homeopathy, Chronic Diseases",
+    },
+  });
+
+  const handleSubmit = async (data: ClinicFormData) => {
+    setIsSubmitting(true);
+    try {
+      console.log('Clinic settings updated:', data);
+      toast({
+        title: "Settings Updated",
+        description: "Your clinic settings have been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogoUpload = () => {
+    console.log('Logo upload triggered');
+    toast({
+      title: "Logo Upload",
+      description: "Logo upload feature will be implemented.",
+    });
+  };
+
+  const handleNotificationChange = (key: string, value: boolean) => {
+    setNotifications(prev => ({ ...prev, [key]: value }));
+    toast({
+      title: "Notification Settings",
+      description: `${key} has been ${value ? 'enabled' : 'disabled'}.`,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your clinic profile, preferences, and system settings.
+        </p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="clinic" data-testid="tab-clinic-settings">Clinic Profile</TabsTrigger>
+          <TabsTrigger value="notifications" data-testid="tab-notification-settings">Notifications</TabsTrigger>
+          <TabsTrigger value="security" data-testid="tab-security-settings">Security</TabsTrigger>
+          <TabsTrigger value="appearance" data-testid="tab-appearance-settings">Appearance</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="clinic" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Logo Upload Section */}
+              <div className="flex items-center gap-6">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src="" />
+                  <AvatarFallback className="text-lg">HC</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-medium mb-2">Clinic Logo</h3>
+                  <Button variant="outline" onClick={handleLogoUpload} data-testid="button-upload-logo">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Logo
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Recommended: 200x200px, PNG or JPG
+                  </p>
+                </div>
+              </div>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="clinicName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Clinic Name</FormLabel>
+                          <FormControl>
+                            <Input data-testid="input-clinic-name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="doctorName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Doctor Name</FormLabel>
+                          <FormControl>
+                            <Input data-testid="input-doctor-name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" data-testid="input-email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input data-testid="input-phone" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Textarea className="resize-none" data-testid="input-address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="qualifications"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Qualifications</FormLabel>
+                          <FormControl>
+                            <Input data-testid="input-qualifications" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="specialization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Specialization</FormLabel>
+                          <FormControl>
+                            <Input data-testid="input-specialization" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Button type="submit" disabled={isSubmitting} data-testid="button-save-clinic">
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                <CardTitle>Notification Preferences</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {[
+                { key: 'emailReminders', label: 'Email Reminders', description: 'Receive appointment reminders via email' },
+                { key: 'smsReminders', label: 'SMS Reminders', description: 'Receive appointment reminders via SMS' },
+                { key: 'appointmentAlerts', label: 'Appointment Alerts', description: 'Get notified about new appointments' },
+                { key: 'paymentAlerts', label: 'Payment Alerts', description: 'Receive notifications for payments' },
+                { key: 'marketingEmails', label: 'Marketing Emails', description: 'Receive updates about new features' },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">{item.label}</h4>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                  <Switch
+                    checked={notifications[item.key as keyof typeof notifications]}
+                    onCheckedChange={(value) => handleNotificationChange(item.key, value)}
+                    data-testid={`switch-${item.key}`}
+                  />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                <CardTitle>Security Settings</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Change Password</h4>
+                    <p className="text-sm text-muted-foreground">Update your account password</p>
+                  </div>
+                  <Button variant="outline" data-testid="button-change-password">
+                    Change Password
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Two-Factor Authentication</h4>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security</p>
+                  </div>
+                  <Button variant="outline" data-testid="button-setup-2fa">
+                    Setup 2FA
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Data Backup</h4>
+                    <p className="text-sm text-muted-foreground">Download your clinic data</p>
+                  </div>
+                  <Button variant="outline" data-testid="button-backup-data">
+                    Download Backup
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appearance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appearance Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Theme</h4>
+                  <p className="text-sm text-muted-foreground">Switch between light and dark mode</p>
+                </div>
+                <ThemeToggle />
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Language</h4>
+                  <p className="text-sm text-muted-foreground">Choose your preferred language</p>
+                </div>
+                <Button variant="outline" data-testid="button-change-language">
+                  English
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Time Zone</h4>
+                  <p className="text-sm text-muted-foreground">Set your local time zone</p>
+                </div>
+                <Button variant="outline" data-testid="button-change-timezone">
+                  UTC +05:30
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

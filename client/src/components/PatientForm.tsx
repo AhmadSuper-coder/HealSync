@@ -1,1 +1,285 @@
-import { useState } from \"react\";\nimport { useForm } from \"react-hook-form\";\nimport { zodResolver } from \"@hookform/resolvers/zod\";\nimport { z } from \"zod\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Form,\n  FormControl,\n  FormField,\n  FormItem,\n  FormLabel,\n  FormMessage,\n} from \"@/components/ui/form\";\nimport { Input } from \"@/components/ui/input\";\nimport { Textarea } from \"@/components/ui/textarea\";\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from \"@/components/ui/select\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { useToast } from \"@/hooks/use-toast\";\n\nconst patientFormSchema = z.object({\n  name: z.string().min(2, \"Name must be at least 2 characters\"),\n  age: z.string().min(1, \"Age is required\"),\n  gender: z.string().min(1, \"Gender is required\"),\n  phone: z.string().min(10, \"Phone number must be at least 10 digits\"),\n  email: z.string().email(\"Invalid email address\").optional().or(z.literal(\"\")),\n  address: z.string().optional(),\n  emergencyContact: z.string().optional(),\n  allergies: z.string().optional(),\n  medicalHistory: z.string().optional(),\n  lifestyle: z.string().optional(),\n});\n\ntype PatientFormData = z.infer<typeof patientFormSchema>;\n\ninterface PatientFormProps {\n  onSubmit?: (data: PatientFormData) => void;\n  initialData?: Partial<PatientFormData>;\n  isEditing?: boolean;\n}\n\nexport function PatientForm({ onSubmit, initialData, isEditing = false }: PatientFormProps) {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const { toast } = useToast();\n\n  const form = useForm<PatientFormData>({\n    resolver: zodResolver(patientFormSchema),\n    defaultValues: {\n      name: initialData?.name || \"\",\n      age: initialData?.age || \"\",\n      gender: initialData?.gender || \"\",\n      phone: initialData?.phone || \"\",\n      email: initialData?.email || \"\",\n      address: initialData?.address || \"\",\n      emergencyContact: initialData?.emergencyContact || \"\",\n      allergies: initialData?.allergies || \"\",\n      medicalHistory: initialData?.medicalHistory || \"\",\n      lifestyle: initialData?.lifestyle || \"\",\n    },\n  });\n\n  const handleSubmit = async (data: PatientFormData) => {\n    setIsSubmitting(true);\n    try {\n      console.log('Patient form submitted:', data);\n      onSubmit?.(data);\n      toast({\n        title: isEditing ? \"Patient Updated\" : \"Patient Registered\",\n        description: `${data.name} has been successfully ${isEditing ? 'updated' : 'registered'}.`,\n      });\n      if (!isEditing) {\n        form.reset();\n      }\n    } catch (error) {\n      toast({\n        title: \"Error\",\n        description: \"Something went wrong. Please try again.\",\n        variant: \"destructive\",\n      });\n    } finally {\n      setIsSubmitting(false);\n    }\n  };\n\n  return (\n    <Card>\n      <CardHeader>\n        <CardTitle>{isEditing ? \"Edit Patient\" : \"Register New Patient\"}</CardTitle>\n      </CardHeader>\n      <CardContent>\n        <Form {...form}>\n          <form onSubmit={form.handleSubmit(handleSubmit)} className=\"space-y-6\">\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <FormField\n                control={form.control}\n                name=\"name\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Full Name</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"John Doe\" data-testid=\"input-name\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n              <FormField\n                control={form.control}\n                name=\"age\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Age</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"25\" type=\"number\" data-testid=\"input-age\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n            </div>\n\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <FormField\n                control={form.control}\n                name=\"gender\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Gender</FormLabel>\n                    <Select onValueChange={field.onChange} defaultValue={field.value}>\n                      <FormControl>\n                        <SelectTrigger data-testid=\"select-gender\">\n                          <SelectValue placeholder=\"Select gender\" />\n                        </SelectTrigger>\n                      </FormControl>\n                      <SelectContent>\n                        <SelectItem value=\"male\">Male</SelectItem>\n                        <SelectItem value=\"female\">Female</SelectItem>\n                        <SelectItem value=\"other\">Other</SelectItem>\n                      </SelectContent>\n                    </Select>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n              <FormField\n                control={form.control}\n                name=\"phone\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Phone Number</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"+91 9876543210\" data-testid=\"input-phone\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n            </div>\n\n            <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">\n              <FormField\n                control={form.control}\n                name=\"email\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Email (Optional)</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"john@example.com\" type=\"email\" data-testid=\"input-email\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n              <FormField\n                control={form.control}\n                name=\"emergencyContact\"\n                render={({ field }) => (\n                  <FormItem>\n                    <FormLabel>Emergency Contact</FormLabel>\n                    <FormControl>\n                      <Input placeholder=\"+91 9876543210\" data-testid=\"input-emergency\" {...field} />\n                    </FormControl>\n                    <FormMessage />\n                  </FormItem>\n                )}\n              />\n            </div>\n\n            <FormField\n              control={form.control}\n              name=\"address\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Address</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"Enter full address\"\n                      className=\"resize-none\"\n                      data-testid=\"input-address\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <FormField\n              control={form.control}\n              name=\"allergies\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Known Allergies</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"List any known allergies\"\n                      className=\"resize-none\"\n                      data-testid=\"input-allergies\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <FormField\n              control={form.control}\n              name=\"medicalHistory\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Medical History</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"Past medical conditions, surgeries, etc.\"\n                      className=\"resize-none\"\n                      data-testid=\"input-medical-history\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <FormField\n              control={form.control}\n              name=\"lifestyle\"\n              render={({ field }) => (\n                <FormItem>\n                  <FormLabel>Lifestyle Information</FormLabel>\n                  <FormControl>\n                    <Textarea\n                      placeholder=\"Diet, exercise, habits, occupation, etc.\"\n                      className=\"resize-none\"\n                      data-testid=\"input-lifestyle\"\n                      {...field}\n                    />\n                  </FormControl>\n                  <FormMessage />\n                </FormItem>\n              )}\n            />\n\n            <Button\n              type=\"submit\"\n              disabled={isSubmitting}\n              className=\"w-full\"\n              data-testid=\"button-submit-patient\"\n            >\n              {isSubmitting ? \"Saving...\" : isEditing ? \"Update Patient\" : \"Register Patient\"}\n            </Button>\n          </form>\n        </Form>\n      </CardContent>\n    </Card>\n  );\n}\n
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+
+const patientFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  age: z.string().min(1, "Age is required"),
+  gender: z.string().min(1, "Gender is required"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  address: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  allergies: z.string().optional(),
+  medicalHistory: z.string().optional(),
+  lifestyle: z.string().optional(),
+});
+
+type PatientFormData = z.infer<typeof patientFormSchema>;
+
+interface PatientFormProps {
+  onSubmit?: (data: PatientFormData) => void;
+  initialData?: Partial<PatientFormData>;
+  isEditing?: boolean;
+}
+
+export function PatientForm({ onSubmit, initialData, isEditing = false }: PatientFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<PatientFormData>({
+    resolver: zodResolver(patientFormSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      age: initialData?.age || "",
+      gender: initialData?.gender || "",
+      phone: initialData?.phone || "",
+      email: initialData?.email || "",
+      address: initialData?.address || "",
+      emergencyContact: initialData?.emergencyContact || "",
+      allergies: initialData?.allergies || "",
+      medicalHistory: initialData?.medicalHistory || "",
+      lifestyle: initialData?.lifestyle || "",
+    },
+  });
+
+  const handleSubmit = async (data: PatientFormData) => {
+    setIsSubmitting(true);
+    try {
+      onSubmit?.(data);
+      toast({
+        title: isEditing ? "Patient Updated" : "Patient Registered",
+        description: `${data.name} has been ${isEditing ? 'updated' : 'registered'} successfully.`,
+      });
+      
+      if (!isEditing) {
+        form.reset();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${isEditing ? 'update' : 'register'} patient. Please try again.`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEditing ? "Edit Patient" : "Register New Patient"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter patient's full name" data-testid="input-name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter age" data-testid="input-age" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gender</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-gender">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number" data-testid="input-phone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Enter email address" data-testid="input-email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="emergencyContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Emergency Contact (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Emergency contact number" data-testid="input-emergency-contact" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter full address" 
+                        className="resize-none" 
+                        data-testid="input-address"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Medical Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Medical Information</h3>
+              <FormField
+                control={form.control}
+                name="allergies"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Allergies (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List any known allergies"
+                        className="resize-none"
+                        data-testid="input-allergies"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="medicalHistory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medical History (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Previous medical conditions, treatments, surgeries etc."
+                        className="resize-none"
+                        data-testid="input-medical-history"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lifestyle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lifestyle Information (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Diet, exercise habits, work environment, stress levels etc."
+                        className="resize-none"
+                        data-testid="input-lifestyle"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full" data-testid="button-submit-patient">
+              {isSubmitting ? "Saving..." : isEditing ? "Update Patient" : "Register Patient"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}

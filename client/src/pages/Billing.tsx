@@ -1,1 +1,228 @@
-import { useState } from \"react\";\nimport { BillingForm } from \"@/components/BillingForm\";\nimport { Button } from \"@/components/ui/button\";\nimport { Card, CardContent, CardHeader, CardTitle } from \"@/components/ui/card\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from \"@/components/ui/tabs\";\nimport {\n  Table,\n  TableBody,\n  TableCell,\n  TableHead,\n  TableHeader,\n  TableRow,\n} from \"@/components/ui/table\";\nimport { Plus, Eye, Download, CreditCard } from \"lucide-react\";\n\ninterface Bill {\n  id: string;\n  patientName: string;\n  amount: number;\n  date: string;\n  status: \"paid\" | \"pending\" | \"overdue\";\n  paymentMethod?: string;\n}\n\n// todo: remove mock functionality\nconst mockBills: Bill[] = [\n  {\n    id: \"1\",\n    patientName: \"Rajesh Sharma\",\n    amount: 800,\n    date: \"2024-01-15\",\n    status: \"paid\",\n    paymentMethod: \"UPI\",\n  },\n  {\n    id: \"2\",\n    patientName: \"Priya Patel\",\n    amount: 1200,\n    date: \"2024-01-14\",\n    status: \"pending\",\n  },\n  {\n    id: \"3\",\n    patientName: \"Amit Kumar\",\n    amount: 600,\n    date: \"2024-01-10\",\n    status: \"overdue\",\n  },\n];\n\nexport default function Billing() {\n  const [activeTab, setActiveTab] = useState(\"list\");\n\n  const handleViewBill = (bill: Bill) => {\n    console.log('View bill:', bill.id);\n  };\n\n  const handleDownloadInvoice = (bill: Bill) => {\n    console.log('Download invoice:', bill.id);\n  };\n\n  const handleMarkPaid = (bill: Bill) => {\n    console.log('Mark bill as paid:', bill.id);\n  };\n\n  const getStatusColor = (status: string) => {\n    switch (status) {\n      case \"paid\":\n        return \"default\";\n      case \"pending\":\n        return \"secondary\";\n      case \"overdue\":\n        return \"destructive\";\n      default:\n        return \"secondary\";\n    }\n  };\n\n  const totalRevenue = mockBills\n    .filter(bill => bill.status === \"paid\")\n    .reduce((sum, bill) => sum + bill.amount, 0);\n\n  const pendingAmount = mockBills\n    .filter(bill => bill.status === \"pending\" || bill.status === \"overdue\")\n    .reduce((sum, bill) => sum + bill.amount, 0);\n\n  return (\n    <div className=\"space-y-6\">\n      <div className=\"flex justify-between items-center\">\n        <div>\n          <h1 className=\"text-3xl font-bold tracking-tight\">Billing & Payments</h1>\n          <p className=\"text-muted-foreground\">\n            Manage invoices, track payments, and generate bills.\n          </p>\n        </div>\n        <Button\n          onClick={() => setActiveTab(\"create\")}\n          data-testid=\"button-new-bill\"\n        >\n          <Plus className=\"mr-2 h-4 w-4\" />\n          Generate Bill\n        </Button>\n      </div>\n\n      {/* Summary Cards */}\n      <div className=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n        <Card>\n          <CardHeader className=\"pb-2\">\n            <CardTitle className=\"text-sm font-medium\">Total Revenue</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"text-2xl font-bold text-chart-4\">₹{totalRevenue.toLocaleString()}</div>\n            <p className=\"text-xs text-muted-foreground\">This month</p>\n          </CardContent>\n        </Card>\n        <Card>\n          <CardHeader className=\"pb-2\">\n            <CardTitle className=\"text-sm font-medium\">Pending Payments</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"text-2xl font-bold text-chart-5\">₹{pendingAmount.toLocaleString()}</div>\n            <p className=\"text-xs text-muted-foreground\">Outstanding amount</p>\n          </CardContent>\n        </Card>\n        <Card>\n          <CardHeader className=\"pb-2\">\n            <CardTitle className=\"text-sm font-medium\">Total Bills</CardTitle>\n          </CardHeader>\n          <CardContent>\n            <div className=\"text-2xl font-bold\">{mockBills.length}</div>\n            <p className=\"text-xs text-muted-foreground\">This month</p>\n          </CardContent>\n        </Card>\n      </div>\n\n      <Tabs value={activeTab} onValueChange={setActiveTab}>\n        <TabsList>\n          <TabsTrigger value=\"list\" data-testid=\"tab-bill-list\">Bills & Invoices</TabsTrigger>\n          <TabsTrigger value=\"create\" data-testid=\"tab-create-bill\">Generate Bill</TabsTrigger>\n        </TabsList>\n\n        <TabsContent value=\"list\" className=\"space-y-6\">\n          <Card>\n            <CardHeader>\n              <CardTitle>Bills & Invoices</CardTitle>\n            </CardHeader>\n            <CardContent>\n              <div className=\"rounded-md border\">\n                <Table>\n                  <TableHeader>\n                    <TableRow>\n                      <TableHead>Patient Name</TableHead>\n                      <TableHead>Amount</TableHead>\n                      <TableHead>Date</TableHead>\n                      <TableHead>Payment Method</TableHead>\n                      <TableHead>Status</TableHead>\n                      <TableHead className=\"text-right\">Actions</TableHead>\n                    </TableRow>\n                  </TableHeader>\n                  <TableBody>\n                    {mockBills.map((bill) => (\n                      <TableRow key={bill.id}>\n                        <TableCell className=\"font-medium\">\n                          {bill.patientName}\n                        </TableCell>\n                        <TableCell>₹{bill.amount}</TableCell>\n                        <TableCell>{bill.date}</TableCell>\n                        <TableCell>{bill.paymentMethod || \"—\"}</TableCell>\n                        <TableCell>\n                          <Badge \n                            variant={getStatusColor(bill.status) as any}\n                            data-testid={`badge-status-${bill.id}`}\n                          >\n                            {bill.status}\n                          </Badge>\n                        </TableCell>\n                        <TableCell className=\"text-right\">\n                          <div className=\"flex justify-end gap-2\">\n                            <Button\n                              variant=\"outline\"\n                              size=\"sm\"\n                              onClick={() => handleViewBill(bill)}\n                              data-testid={`button-view-${bill.id}`}\n                            >\n                              <Eye className=\"h-4 w-4\" />\n                            </Button>\n                            <Button\n                              variant=\"outline\"\n                              size=\"sm\"\n                              onClick={() => handleDownloadInvoice(bill)}\n                              data-testid={`button-download-${bill.id}`}\n                            >\n                              <Download className=\"h-4 w-4\" />\n                            </Button>\n                            {bill.status !== \"paid\" && (\n                              <Button\n                                variant=\"outline\"\n                                size=\"sm\"\n                                onClick={() => handleMarkPaid(bill)}\n                                data-testid={`button-mark-paid-${bill.id}`}\n                              >\n                                <CreditCard className=\"h-4 w-4\" />\n                              </Button>\n                            )}\n                          </div>\n                        </TableCell>\n                      </TableRow>\n                    ))}\n                  </TableBody>\n                </Table>\n              </div>\n            </CardContent>\n          </Card>\n        </TabsContent>\n\n        <TabsContent value=\"create\" className=\"space-y-6\">\n          <BillingForm onSubmit={(data) => {\n            console.log('Bill generated:', data);\n            setActiveTab(\"list\");\n          }} />\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n}\n
+import { useState } from "react";
+import { BillingForm } from "@/components/BillingForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Eye, Download, CreditCard } from "lucide-react";
+
+interface Bill {
+  id: string;
+  patientName: string;
+  amount: number;
+  date: string;
+  status: "paid" | "pending" | "overdue";
+  paymentMethod?: string;
+}
+
+// todo: remove mock functionality
+const mockBills: Bill[] = [
+  {
+    id: "1",
+    patientName: "Rajesh Sharma",
+    amount: 800,
+    date: "2024-01-15",
+    status: "paid",
+    paymentMethod: "UPI",
+  },
+  {
+    id: "2",
+    patientName: "Priya Patel",
+    amount: 1200,
+    date: "2024-01-14",
+    status: "pending",
+  },
+  {
+    id: "3",
+    patientName: "Amit Kumar",
+    amount: 600,
+    date: "2024-01-10",
+    status: "overdue",
+  },
+];
+
+export default function Billing() {
+  const [activeTab, setActiveTab] = useState("list");
+
+  const handleViewBill = (bill: Bill) => {
+    console.log('View bill:', bill.id);
+  };
+
+  const handleDownloadInvoice = (bill: Bill) => {
+    console.log('Download invoice:', bill.id);
+  };
+
+  const handleMarkPaid = (bill: Bill) => {
+    console.log('Mark bill as paid:', bill.id);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "overdue":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const totalRevenue = mockBills
+    .filter(bill => bill.status === "paid")
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const pendingAmount = mockBills
+    .filter(bill => bill.status === "pending")
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const overdueAmount = mockBills
+    .filter(bill => bill.status === "overdue")
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Billing & Payments</h1>
+          <p className="text-muted-foreground">
+            Generate invoices, track payments, and manage billing.
+          </p>
+        </div>
+        <Button
+          onClick={() => setActiveTab("create")}
+          data-testid="button-create-bill"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Bill
+        </Button>
+      </div>
+
+      {/* Financial Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-bold text-green-600">₹{totalRevenue}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600">₹{pendingAmount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CreditCard className="h-8 w-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+                <p className="text-2xl font-bold text-red-600">₹{overdueAmount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="list" data-testid="tab-bill-list">Bill List</TabsTrigger>
+          <TabsTrigger value="create" data-testid="tab-create-bill">Create Bill</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Bills</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment Method</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockBills.map((bill) => (
+                    <TableRow key={bill.id}>
+                      <TableCell className="font-medium">{bill.patientName}</TableCell>
+                      <TableCell>₹{bill.amount}</TableCell>
+                      <TableCell>{bill.date}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(bill.status) as any}>
+                          {bill.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{bill.paymentMethod || "N/A"}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewBill(bill)}
+                            data-testid={`button-view-bill-${bill.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDownloadInvoice(bill)}
+                            data-testid={`button-download-bill-${bill.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          {bill.status === "pending" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleMarkPaid(bill)}
+                              data-testid={`button-mark-paid-${bill.id}`}
+                            >
+                              Mark Paid
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="create" className="space-y-6">
+          <BillingForm onSubmit={(data) => {
+            console.log('Bill created:', data);
+            setActiveTab("list");
+          }} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
