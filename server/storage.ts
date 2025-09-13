@@ -1,37 +1,46 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type Doctor, type InsertDoctor } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 // modify the interface with any CRUD methods
 // you might need
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getDoctor(id: string): Promise<Doctor | undefined>;
+  getDoctorByEmail(email: string): Promise<Doctor | undefined>;
+  createDoctor(doctor: InsertDoctor): Promise<Doctor>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private doctors: Map<string, Doctor>;
 
   constructor() {
-    this.users = new Map();
+    this.doctors = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getDoctor(id: string): Promise<Doctor | undefined> {
+    return this.doctors.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getDoctorByEmail(email: string): Promise<Doctor | undefined> {
+    return Array.from(this.doctors.values()).find(
+      (doctor) => doctor.email === email,
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createDoctor(insertDoctor: InsertDoctor): Promise<Doctor> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const doctor: Doctor = { 
+      ...insertDoctor, 
+      id, 
+      createdAt: new Date(), 
+      isActive: true,
+      clinicLogo: insertDoctor.clinicLogo || null,
+      phone: insertDoctor.phone || null,
+      address: insertDoctor.address || null,
+      qualifications: insertDoctor.qualifications || null
+    };
+    this.doctors.set(id, doctor);
+    return doctor;
   }
 }
 

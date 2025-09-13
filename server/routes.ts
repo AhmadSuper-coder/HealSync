@@ -141,6 +141,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send patient info endpoint with PDF upload support
+  app.post('/api/patients/:id/send-info', (req, res) => {
+    const patient = mockPatients.find(p => p.id === req.params.id);
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    try {
+      // Get patient data for PDF generation
+      const patientPrescriptions = mockPrescriptions.filter(p => p.patientId === req.params.id);
+      const patientBills = mockBills.filter(b => b.patientId === req.params.id);
+
+      // Check if this is a FormData request (with PDF)
+      const contentType = req.headers['content-type'] || '';
+      const isFormData = contentType.includes('multipart/form-data');
+      
+      if (isFormData) {
+        console.log(`Received PDF upload for patient ${patient.name}`);
+        console.log(`Patient has ${patientPrescriptions.length} prescriptions and ${patientBills.length} bills`);
+        
+        // In a real implementation, this would:
+        // 1. Process the uploaded PDF file
+        // 2. Store it temporarily or in cloud storage
+        // 3. Send via WhatsApp/Email/SMS with PDF attachment
+        // 4. Log the communication in the database
+        
+        console.log(`Sending patient information with PDF to ${patient.name} (${patient.phone})`);
+      } else {
+        console.log(`Sending patient information to ${patient.name} (${patient.phone})`);
+      }
+      
+      // Simulate successful sending
+      res.json({
+        success: true,
+        message: `Patient information ${isFormData ? 'with PDF report ' : ''}sent successfully to ${patient.name}`,
+        recipient: patient.phone,
+        method: "whatsapp", // Default to WhatsApp for Indian users
+        pdfAttached: isFormData,
+        sentAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error sending patient info:', error);
+      res.status(500).json({ 
+        error: "Failed to send patient information",
+        message: "An error occurred while processing the request"
+      });
+    }
+  });
+
   // Prescription endpoints
   app.get('/api/prescriptions', (req, res) => {
     const { patientId } = req.query;

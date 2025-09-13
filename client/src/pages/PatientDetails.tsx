@@ -14,6 +14,7 @@ import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { BillingForm } from "@/components/BillingForm";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
 import type { Patient, Prescription, Bill, Medicine } from "@shared/schema";
 
 export default function PatientDetails() {
@@ -46,27 +47,90 @@ export default function PatientDetails() {
 
   // Send patient info mutation
   const sendPatientInfoMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/patients/${patientId}/send-info`, {
-      method: 'POST',
-    }),
-    onSuccess: () => {
+    mutationFn: async () => {
+      if (!patient || !prescriptions || !bills) {
+        throw new Error("Patient data not available");
+      }
+
+      try {
+        // Generate PDF blob with patient data
+        const pdfBlob = getPatientPDFBlob({
+          patient,
+          prescriptions,
+          bills
+        });
+
+        // Create FormData to send PDF with the request
+        const formData = new FormData();
+        formData.append('pdf', pdfBlob, `${patient.name.replace(/\s+/g, '_')}_PatientReport.pdf`);
+        formData.append('patientName', patient.name);
+        formData.append('patientPhone', patient.phone || '');
+
+        // Send the request with PDF attached
+        const response = await fetch(`/api/patients/${patientId}/send-info`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include', // Include credentials like apiRequest does
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error in sendPatientInfo:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
       toast({
         title: "Information Sent",
-        description: `Patient information has been sent to ${patient?.name}`,
+        description: `Patient information with PDF report has been sent to ${patient?.name} via ${data?.method || 'WhatsApp'}`,
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Send patient info error:', error);
       toast({
         title: "Error",
-        description: "Failed to send patient information",
+        description: "Failed to send patient information. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const sendPatientInfo = () => {
-    if (patient) {
+    if (patient && prescriptions !== undefined && bills !== undefined) {
       sendPatientInfoMutation.mutate();
+    } else {
+      toast({
+        title: "Error",
+        description: "Patient data is not fully loaded yet. Please wait and try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadPatientReport = () => {
+    if (patient && prescriptions && bills) {
+      try {
+        downloadPatientPDF({
+          patient,
+          prescriptions,
+          bills
+        });
+        toast({
+          title: "PDF Downloaded",
+          description: "Patient report has been downloaded successfully",
+        });
+      } catch (error) {
+        console.error('Error downloading PDF:', error);
+        toast({
+          title: "Download Failed",
+          description: "Failed to generate patient report PDF",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -121,6 +185,10 @@ export default function PatientDetails() {
           <Button onClick={sendPatientInfo} data-testid="button-send-patient-info">
             <Send className="mr-2 h-4 w-4" />
             Send Patient Info
+          </Button>
+          <Button variant="outline" onClick={downloadPatientReport} data-testid="button-download-patient-report">
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
           </Button>
         </div>
       </div>
