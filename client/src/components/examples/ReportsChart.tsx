@@ -1,1 +1,0 @@
-import { ReportsChart } from '../ReportsChart';\n\nexport default function ReportsChartExample() {\n  return <ReportsChart />;\n}\n

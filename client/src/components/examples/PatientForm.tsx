@@ -1,1 +1,0 @@
-import { PatientForm } from '../PatientForm';\n\nexport default function PatientFormExample() {\n  return (\n    <PatientForm \n      onSubmit={(data) => console.log('Patient form submitted:', data)}\n    />\n  );\n}\n

@@ -1,1 +1,0 @@
-import { AppointmentScheduler } from '../AppointmentScheduler';\n\nexport default function AppointmentSchedulerExample() {\n  return (\n    <AppointmentScheduler \n      onSubmit={(data) => console.log('Appointment scheduled:', data)}\n    />\n  );\n}\n
