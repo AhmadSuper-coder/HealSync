@@ -3,6 +3,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,9 +25,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Send, Bell, Users, Phone, Mail, CheckCircle } from "lucide-react";
+import { MessageSquare, Send, Bell, Users, Phone, Mail, CheckCircle, Megaphone, PlusCircle, Edit2, Pin, UnPin, Clock, AlertCircle, Star } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { insertFeedbackRequestSchema, insertAnnouncementSchema, type FeedbackRequest, type Announcement } from "@shared/schema";
 
 // Communication channel pricing (in INR)
 const CHANNEL_PRICING = {
@@ -45,7 +49,17 @@ const messageFormSchema = z.object({
   channel: z.string().min(1, "Communication channel is required"),
 });
 
+const feedbackFormSchema = insertFeedbackRequestSchema.extend({
+  doctorId: z.string().default("demo-doctor-id") // Mock doctor ID for demo
+});
+
+const announcementFormSchema = insertAnnouncementSchema.extend({
+  createdBy: z.string().default("demo-admin-id") // Mock admin ID for demo
+});
+
 type MessageFormData = z.infer<typeof messageFormSchema>;
+type FeedbackFormData = z.infer<typeof feedbackFormSchema>;
+type AnnouncementFormData = z.infer<typeof announcementFormSchema>;
 
 interface Message {
   id: string;
@@ -63,6 +77,9 @@ export default function Communication() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState<CommunicationChannel>("whatsapp");
   const [recipientCount, setRecipientCount] = useState(1);
+  const [showCreateAnnouncement, setShowCreateAnnouncement] = useState(false);
+  const [showCreateFeedback, setShowCreateFeedback] = useState(false);
+  const [isAdmin] = useState(true); // Mock admin status for demo
   const { toast } = useToast();
 
   // todo: remove mock functionality
@@ -99,6 +116,7 @@ export default function Communication() {
     },
   ];
 
+  // Forms for different functionalities
   const form = useForm<MessageFormData>({
     resolver: zodResolver(messageFormSchema),
     defaultValues: {
@@ -108,6 +126,94 @@ export default function Communication() {
       type: "",
       channel: "whatsapp",
     },
+  });
+
+  const feedbackForm = useForm<FeedbackFormData>({
+    resolver: zodResolver(feedbackFormSchema),
+    defaultValues: {
+      doctorId: "demo-doctor-id",
+      title: "",
+      type: "suggestion",
+      description: "",
+      status: "open",
+    },
+  });
+
+  const announcementForm = useForm<AnnouncementFormData>({
+    resolver: zodResolver(announcementFormSchema),
+    defaultValues: {
+      title: "",
+      message: "",
+      category: "feature",
+      audience: "all",
+      isPinned: false,
+      createdBy: "demo-admin-id",
+    },
+  });
+
+  // Fetch feedback and announcements
+  const { data: feedbackList = [] } = useQuery({
+    queryKey: ['/api/feedback'],
+    queryFn: async () => {
+      const response = await fetch('/api/feedback?doctorId=demo-doctor-id');
+      if (!response.ok) throw new Error('Failed to fetch feedback');
+      return response.json();
+    },
+  });
+
+  const { data: announcements = [] } = useQuery({
+    queryKey: ['/api/announcements'],
+    queryFn: async () => {
+      const response = await fetch('/api/announcements');
+      if (!response.ok) throw new Error('Failed to fetch announcements');
+      return response.json();
+    },
+  });
+
+  // Feedback submission mutation
+  const createFeedbackMutation = useMutation({
+    mutationFn: async (data: FeedbackFormData) => {
+      return apiRequest('POST', '/api/feedback', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/feedback'] });
+      feedbackForm.reset();
+      setShowCreateFeedback(false);
+      toast({
+        title: "Feedback Submitted",
+        description: "Thank you for your feedback. We'll review it soon."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Announcement creation mutation (admin only)
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (data: AnnouncementFormData) => {
+      return apiRequest('POST', '/api/announcements', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/announcements'] });
+      announcementForm.reset();
+      setShowCreateAnnouncement(false);
+      toast({
+        title: "Announcement Created",
+        description: "Announcement published successfully to all clinics."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create announcement. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   // Calculate estimated cost
@@ -201,6 +307,8 @@ export default function Communication() {
           <TabsTrigger value="send" data-testid="tab-send-message">Send Message</TabsTrigger>
           <TabsTrigger value="history" data-testid="tab-message-history">Message History</TabsTrigger>
           <TabsTrigger value="templates" data-testid="tab-message-templates">Templates</TabsTrigger>
+          <TabsTrigger value="announcements" data-testid="tab-announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="feedback" data-testid="tab-feedback">Feedback</TabsTrigger>
         </TabsList>
 
         <TabsContent value="send" className="space-y-6">
@@ -485,6 +593,332 @@ export default function Communication() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="announcements" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="h-5 w-5" />
+                    Global Announcements
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    System-wide updates and notifications for all clinics
+                  </p>
+                </div>
+                {isAdmin && (
+                  <Dialog open={showCreateAnnouncement} onOpenChange={setShowCreateAnnouncement}>
+                    <DialogTrigger asChild>
+                      <Button data-testid="button-create-announcement">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create Announcement
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Create New Announcement</DialogTitle>
+                      </DialogHeader>
+                      <Form {...announcementForm}>
+                        <form onSubmit={announcementForm.handleSubmit((data) => createAnnouncementMutation.mutate(data))} className="space-y-4">
+                          <FormField
+                            control={announcementForm.control}
+                            name="title"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Title</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Announcement title" data-testid="input-announcement-title" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={announcementForm.control}
+                              name="category"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Category</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                      <SelectTrigger data-testid="select-announcement-category">
+                                        <SelectValue placeholder="Select category" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="feature">New Feature</SelectItem>
+                                      <SelectItem value="pricing">Pricing Update</SelectItem>
+                                      <SelectItem value="update">System Update</SelectItem>
+                                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={announcementForm.control}
+                              name="isPinned"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Pin Announcement</FormLabel>
+                                  <FormControl>
+                                    <div className="flex items-center space-x-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={field.value}
+                                        onChange={field.onChange}
+                                        data-testid="checkbox-pin-announcement"
+                                        className="h-4 w-4"
+                                      />
+                                      <span className="text-sm">Pin to top</span>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <FormField
+                            control={announcementForm.control}
+                            name="message"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Message</FormLabel>
+                                <FormControl>
+                                  <Textarea
+                                    placeholder="Announcement message..."
+                                    className="min-h-32"
+                                    data-testid="textarea-announcement-message"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex gap-2 pt-4">
+                            <Button 
+                              type="submit" 
+                              disabled={createAnnouncementMutation.isPending}
+                              className="flex-1"
+                              data-testid="button-submit-announcement"
+                            >
+                              {createAnnouncementMutation.isPending ? "Publishing..." : "Publish Announcement"}
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => setShowCreateAnnouncement(false)}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {announcements.length > 0 ? (
+                  announcements.map((announcement: Announcement) => (
+                    <div key={announcement.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`announcement-${announcement.id}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2">
+                          {announcement.isPinned && <Pin className="h-4 w-4 text-orange-500" />}
+                          <Badge variant={
+                            announcement.category === 'feature' ? 'default' :
+                            announcement.category === 'pricing' ? 'destructive' :
+                            announcement.category === 'update' ? 'secondary' : 'outline'
+                          }>
+                            {announcement.category}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(announcement.publishedAt || announcement.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold mb-2">{announcement.title}</h3>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{announcement.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No announcements yet.</p>
+                    {isAdmin && (
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setShowCreateAnnouncement(true)}
+                        data-testid="button-create-first-announcement"
+                      >
+                        Create First Announcement
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="feedback" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Feedback & Suggestions
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Share your suggestions and feature requests
+                  </p>
+                </div>
+                <Dialog open={showCreateFeedback} onOpenChange={setShowCreateFeedback}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-create-feedback">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Submit Feedback
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Submit Feedback</DialogTitle>
+                    </DialogHeader>
+                    <Form {...feedbackForm}>
+                      <form onSubmit={feedbackForm.handleSubmit((data) => createFeedbackMutation.mutate(data))} className="space-y-4">
+                        <FormField
+                          control={feedbackForm.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Title</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Brief title for your feedback" data-testid="input-feedback-title" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={feedbackForm.control}
+                          name="type"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-feedback-type">
+                                    <SelectValue placeholder="Select feedback type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="suggestion">Suggestion</SelectItem>
+                                  <SelectItem value="feature">Feature Request</SelectItem>
+                                  <SelectItem value="bug">Bug Report</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={feedbackForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Description</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Describe your feedback in detail..."
+                                  className="min-h-32"
+                                  data-testid="textarea-feedback-description"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex gap-2 pt-4">
+                          <Button 
+                            type="submit" 
+                            disabled={createFeedbackMutation.isPending}
+                            className="flex-1"
+                            data-testid="button-submit-feedback"
+                          >
+                            {createFeedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
+                          </Button>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setShowCreateFeedback(false)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {feedbackList.length > 0 ? (
+                  feedbackList.map((feedback: FeedbackRequest) => (
+                    <div key={feedback.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`feedback-${feedback.id}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={
+                            feedback.type === 'bug' ? 'destructive' :
+                            feedback.type === 'feature' ? 'default' : 'secondary'
+                          }>
+                            {feedback.type}
+                          </Badge>
+                          <Badge variant={
+                            feedback.status === 'done' ? 'default' :
+                            feedback.status === 'in_progress' ? 'secondary' :
+                            feedback.status === 'planned' ? 'outline' : 'secondary'
+                          }>
+                            {feedback.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(feedback.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold mb-2">{feedback.title}</h3>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{feedback.description}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No feedback submitted yet.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => setShowCreateFeedback(true)}
+                      data-testid="button-submit-first-feedback"
+                    >
+                      Submit First Feedback
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

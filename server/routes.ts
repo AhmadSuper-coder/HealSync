@@ -2,6 +2,16 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { insertFeedbackRequestSchema, insertAnnouncementSchema } from "@shared/schema";
+
+// Simple admin middleware for testing
+const requireAdmin = (req: any, res: any, next: any) => {
+  const isAdmin = req.headers['x-admin'] === 'true';
+  if (!isAdmin) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  next();
+};
 
 // Mock patient data
 const mockPatients = [
@@ -308,6 +318,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       fileName: fileName,
       url: `/uploads/${fileName}`
     });
+  });
+
+  // Feedback endpoints
+  app.post('/api/feedback', async (req, res) => {
+    try {
+      const validatedData = insertFeedbackRequestSchema.parse(req.body);
+      const feedback = await storage.createFeedback(validatedData);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid feedback data" });
+    }
+  });
+
+  app.get('/api/feedback', async (req, res) => {
+    try {
+      const scope = req.query.scope as string;
+      const doctorId = req.query.doctorId as string;
+      
+      // Admin can see all feedback, users see only their own
+      const isAdmin = req.headers['x-admin'] === 'true';
+      if (scope === 'all' && !isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      const feedback = await storage.listFeedback(
+        scope === 'all' ? undefined : doctorId
+      );
+      res.json(feedback);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch feedback" });
+    }
+  });
+
+  app.patch('/api/feedback/:id/status', requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      const feedback = await storage.updateFeedbackStatus(req.params.id, status);
+      if (feedback) {
+        res.json(feedback);
+      } else {
+        res.status(404).json({ error: "Feedback not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update feedback status" });
+    }
+  });
+
+  // Announcement endpoints
+  app.post('/api/announcements', requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertAnnouncementSchema.parse(req.body);
+      const announcement = await storage.createAnnouncement(validatedData);
+      res.json(announcement);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid announcement data" });
+    }
+  });
+
+  app.get('/api/announcements', async (req, res) => {
+    try {
+      const since = req.query.since ? new Date(req.query.since as string) : undefined;
+      const announcements = await storage.listAnnouncements(since);
+      res.json(announcements);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch announcements" });
+    }
+  });
+
+  app.patch('/api/announcements/:id', requireAdmin, async (req, res) => {
+    try {
+      const announcement = await storage.updateAnnouncement(req.params.id, req.body);
+      if (announcement) {
+        res.json(announcement);
+      } else {
+        res.status(404).json({ error: "Announcement not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  app.post('/api/announcements/:id/read', async (req, res) => {
+    try {
+      const { doctorId } = req.body;
+      const announcement = await storage.markAnnouncementRead(req.params.id, doctorId);
+      if (announcement) {
+        res.json(announcement);
+      } else {
+        res.status(404).json({ error: "Announcement not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark announcement as read" });
+    }
   });
 
   const httpServer = createServer(app);

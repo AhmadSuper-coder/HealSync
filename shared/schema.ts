@@ -15,6 +15,7 @@ export const doctors = pgTable("doctors", {
   address: text("address"),
   qualifications: text("qualifications"),
   isActive: boolean("is_active").default(true),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -185,6 +186,51 @@ export const insertCommunicationMethodSchema = createInsertSchema(communicationM
 
 export type CommunicationMethod = typeof communicationMethods.$inferSelect;
 export type InsertCommunicationMethod = z.infer<typeof insertCommunicationMethodSchema>;
+
+// Feedback/Suggestion schema
+export const feedbackRequests = pgTable("feedback_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull(),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // suggestion, feature, bug
+  description: text("description").notNull(),
+  status: text("status").notNull().default("open"), // open, planned, in_progress, done, declined
+  priority: text("priority"), // low, medium, high
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFeedbackRequestSchema = createInsertSchema(feedbackRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FeedbackRequest = typeof feedbackRequests.$inferSelect;
+export type InsertFeedbackRequest = z.infer<typeof insertFeedbackRequestSchema>;
+
+// Announcements schema
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  category: text("category").notNull(), // feature, pricing, update, maintenance
+  audience: text("audience").notNull().default("all"), // all or clinic IDs
+  isPinned: boolean("is_pinned").default(false),
+  activeFrom: timestamp("active_from"),
+  activeUntil: timestamp("active_until"),
+  readBy: text("read_by").array(), // Array of doctor IDs who have read
+  createdBy: varchar("created_by"), // Doctor ID of creator
+  publishedAt: timestamp("published_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
+  id: true,
+  createdAt: true,
+  publishedAt: true,
+});
+
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 
 // Medicine interface for prescriptions
 export interface Medicine {
