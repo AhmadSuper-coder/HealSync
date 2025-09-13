@@ -1,0 +1,1 @@
+import { FileUpload } from '../FileUpload';\n\nexport default function FileUploadExample() {\n  return (\n    <FileUpload \n      onUpload={(files) => console.log('Files uploaded:', files)}\n    />\n  );\n}\n

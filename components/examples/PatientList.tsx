@@ -1,0 +1,1 @@
+import { PatientList } from '../PatientList';\n\nexport default function PatientListExample() {\n  return <PatientList />;\n}\n

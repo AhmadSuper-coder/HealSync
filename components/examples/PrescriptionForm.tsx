@@ -1,0 +1,1 @@
+import { PrescriptionForm } from '../PrescriptionForm';\n\nexport default function PrescriptionFormExample() {\n  return (\n    <PrescriptionForm \n      onSubmit={(data) => console.log('Prescription created:', data)}\n    />\n  );\n}\n

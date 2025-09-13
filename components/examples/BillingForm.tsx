@@ -1,0 +1,1 @@
+import { BillingForm } from '../BillingForm';\n\nexport default function BillingFormExample() {\n  return (\n    <BillingForm \n      onSubmit={(data) => console.log('Bill generated:', data)}\n    />\n  );\n}\n

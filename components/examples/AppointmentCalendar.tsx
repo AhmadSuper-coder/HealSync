@@ -1,0 +1,1 @@
+import { AppointmentCalendar } from '../AppointmentCalendar';\n\nexport default function AppointmentCalendarExample() {\n  return <AppointmentCalendar />;\n}\n
