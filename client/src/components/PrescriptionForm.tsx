@@ -37,13 +37,13 @@ type PrescriptionFormData = z.infer<typeof prescriptionFormSchema>;
 interface Patient {
   id: string;
   name: string;
-  mobile: string;
+  phone: string;
   age: number;
   gender: string;
 }
 
 interface PrescriptionFormProps {
-  onSubmit?: (data: PrescriptionFormData & { patientName: string; patientMobile: string }) => void;
+  onSubmit?: (data: PrescriptionFormData & { patientName: string; patientPhone: string }) => void;
   initialData?: Partial<PrescriptionFormData>;
   isEditing?: boolean;
 }
@@ -91,7 +91,7 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
       const prescriptionData = {
         ...data,
         patientName: selectedPatient.name,
-        patientMobile: selectedPatient.mobile,
+        patientPhone: selectedPatient.phone,
       };
 
       // Create prescription via API
@@ -171,7 +171,7 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
             {selectedPatient && (
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Selected Patient:</p>
-                <p className="font-medium">{selectedPatient.mobile} - {selectedPatient.name}</p>
+                <p className="font-medium">{selectedPatient.phone} - {selectedPatient.name}</p>
                 <p className="text-sm text-muted-foreground">{selectedPatient.age} years, {selectedPatient.gender}</p>
               </div>
             )}

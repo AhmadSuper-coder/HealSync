@@ -8,7 +8,7 @@ const mockPatients = [
   {
     id: "1",
     name: "Rajesh Sharma",
-    mobile: "+91 9876543210",
+    phone: "+91 9876543210",
     age: 45,
     gender: "Male",
     address: "123 Main St, Mumbai",
@@ -18,7 +18,7 @@ const mockPatients = [
   {
     id: "2",
     name: "Priya Patel",
-    mobile: "+91 9876543211",
+    phone: "+91 9876543211",
     age: 32,
     gender: "Female",
     address: "456 Park Ave, Pune",
@@ -28,7 +28,7 @@ const mockPatients = [
   {
     id: "3",
     name: "Amit Kumar",
-    mobile: "+91 9876543212",
+    phone: "+91 9876543212",
     age: 28,
     gender: "Male",
     address: "789 Garden Rd, Delhi",
@@ -42,7 +42,7 @@ const mockPrescriptions = [
     id: "1",
     patientId: "1",
     patientName: "Rajesh Sharma",
-    patientMobile: "+91 9876543210",
+    patientPhone: "+91 9876543210",
     medicines: [
       {
         name: "Arnica 30C",
@@ -52,8 +52,26 @@ const mockPrescriptions = [
       }
     ],
     instructions: "Take before meals",
-    date: "2024-01-15",
-    followUpDate: "2024-01-30"
+    status: "active",
+    createdAt: "2024-01-15T10:00:00Z",
+    followUpDate: "2024-01-30T10:00:00Z"
+  }
+];
+
+// Mock bills data
+const mockBills = [
+  {
+    id: "1",
+    patientId: "1",
+    patientName: "Rajesh Sharma",
+    patientPhone: "+91 9876543210",
+    prescriptionId: "1",
+    amount: 50000, // Amount in paise (₹500)
+    description: "Consultation and Homeopathic medicines",
+    status: "pending",
+    paymentMethod: null,
+    createdAt: "2024-01-15T10:30:00Z",
+    paidAt: null
   }
 ];
 
@@ -125,7 +143,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Prescription endpoints
   app.get('/api/prescriptions', (req, res) => {
-    res.json(mockPrescriptions);
+    const { patientId } = req.query;
+    let prescriptions = mockPrescriptions;
+    
+    if (patientId) {
+      prescriptions = mockPrescriptions.filter(p => p.patientId === patientId);
+    }
+    
+    res.json(prescriptions);
   });
 
   app.get('/api/prescriptions/:id', (req, res) => {
@@ -140,11 +165,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/prescriptions', (req, res) => {
     const newPrescription = {
       id: (mockPrescriptions.length + 1).toString(),
-      date: new Date().toISOString().split('T')[0],
+      status: "active",
+      createdAt: new Date().toISOString(),
       ...req.body
     };
     mockPrescriptions.push(newPrescription);
     res.json(newPrescription);
+  });
+
+  // Bills endpoints
+  app.get('/api/bills', (req, res) => {
+    const { patientId } = req.query;
+    let bills = mockBills;
+    
+    if (patientId) {
+      bills = mockBills.filter(b => b.patientId === patientId);
+    }
+    
+    res.json(bills);
+  });
+
+  app.get('/api/bills/:id', (req, res) => {
+    const bill = mockBills.find(b => b.id === req.params.id);
+    if (bill) {
+      res.json(bill);
+    } else {
+      res.status(404).json({ error: "Bill not found" });
+    }
+  });
+
+  app.post('/api/bills', (req, res) => {
+    const newBill = {
+      id: (mockBills.length + 1).toString(),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      paidAt: null,
+      ...req.body
+    };
+    mockBills.push(newBill);
+    res.json(newBill);
+  });
+
+  app.patch('/api/bills/:id', (req, res) => {
+    const index = mockBills.findIndex(b => b.id === req.params.id);
+    if (index !== -1) {
+      const updatedBill = { ...mockBills[index], ...req.body };
+      if (req.body.status === "paid") {
+        updatedBill.paidAt = new Date().toISOString();
+      }
+      mockBills[index] = updatedBill;
+      res.json(updatedBill);
+    } else {
+      res.status(404).json({ error: "Bill not found" });
+    }
   });
 
   // File upload endpoint

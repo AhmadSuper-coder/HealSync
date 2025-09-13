@@ -1,54 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRoute } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image, Eye, Plus, FilePlus, Receipt, Send, Download, Stethoscope, CreditCard } from "lucide-react";
 import { Link } from "wouter";
-
-interface Patient {
-  id: string;
-  name: string;
-  mobile: string;
-  age: number;
-  gender: string;
-  email?: string;
-  address?: string;
-  emergencyContact?: string;
-  allergies?: string;
-  medicalHistory?: string;
-  lifestyle?: string;
-  prescriptionImages?: string[];
-}
+import { PrescriptionForm } from "@/components/PrescriptionForm";
+import { BillingForm } from "@/components/BillingForm";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Patient, Prescription, Bill, Medicine } from "@shared/schema";
 
 export default function PatientDetails() {
   const [match, params] = useRoute("/patients/:id");
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [showAddPrescription, setShowAddPrescription] = useState(false);
+  const [showAddBilling, setShowAddBilling] = useState(false);
+  const [billingPrescriptionId, setBillingPrescriptionId] = useState<string | undefined>(undefined);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (params?.id) {
-      fetchPatient(params.id);
-    }
-  }, [params?.id]);
+  const patientId = params?.id;
 
-  const fetchPatient = async (id: string) => {
-    try {
-      const response = await fetch(`/api/patients/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPatient(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch patient:', error);
-    } finally {
-      setIsLoading(false);
+  // Fetch patient data
+  const { data: patient, isLoading: isPatientLoading } = useQuery({
+    queryKey: ['/api/patients', patientId],
+    enabled: !!patientId,
+  });
+
+  // Fetch prescriptions and bills using useQuery for proper cache management
+  const { data: prescriptions = [], isLoading: isPrescriptionsLoading } = useQuery({
+    queryKey: ['/api/prescriptions', patientId],
+    enabled: !!patientId,
+  });
+
+  const { data: bills = [], isLoading: isBillsLoading } = useQuery({
+    queryKey: ['/api/bills', patientId],
+    enabled: !!patientId,
+  });
+
+  // Send patient info mutation
+  const sendPatientInfoMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/patients/${patientId}/send-info`, {
+      method: 'POST',
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Information Sent",
+        description: `Patient information has been sent to ${patient?.name}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send patient information",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendPatientInfo = () => {
+    if (patient) {
+      sendPatientInfoMutation.mutate();
     }
   };
 
-  if (isLoading) {
+  if (isPatientLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -89,12 +111,18 @@ export default function PatientDetails() {
             </Button>
           </Link>
         </div>
-        <Link href={`/patients/${patient.id}/edit`}>
-          <Button data-testid="button-edit-patient">
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Patient
+        <div className="flex items-center gap-2">
+          <Link href={`/patients/${patient.id}/edit`}>
+            <Button variant="outline" data-testid="button-edit-patient">
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Patient
+            </Button>
+          </Link>
+          <Button onClick={sendPatientInfo} data-testid="button-send-patient-info">
+            <Send className="mr-2 h-4 w-4" />
+            Send Patient Info
           </Button>
-        </Link>
+        </div>
       </div>
 
       {/* Patient Profile Card */}
@@ -116,7 +144,7 @@ export default function PatientDetails() {
               <div className="flex items-center gap-4 mt-2 text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Phone className="h-4 w-4" />
-                  <span>{patient.mobile}</span>
+                  <span>{patient.phone}</span>
                 </div>
                 {patient.email && (
                   <div className="flex items-center gap-1">
@@ -135,6 +163,8 @@ export default function PatientDetails() {
         <TabsList>
           <TabsTrigger value="basic" data-testid="tab-basic-details">Basic Information</TabsTrigger>
           <TabsTrigger value="medical" data-testid="tab-medical-details">Medical History</TabsTrigger>
+          <TabsTrigger value="prescriptions" data-testid="tab-prescriptions">Prescriptions</TabsTrigger>
+          <TabsTrigger value="billing" data-testid="tab-billing">Billing</TabsTrigger>
           <TabsTrigger value="documents" data-testid="tab-patient-documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -148,8 +178,8 @@ export default function PatientDetails() {
                 <div className="flex items-center gap-3">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Mobile Number</p>
-                    <p className="font-medium">{patient.mobile}</p>
+                    <p className="text-sm text-muted-foreground">Phone Number</p>
+                    <p className="font-medium">{patient.phone}</p>
                   </div>
                 </div>
                 
@@ -296,6 +326,347 @@ export default function PatientDetails() {
                       Upload Documents
                     </Button>
                   </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="prescriptions" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" />
+                  Prescriptions ({prescriptions.length})
+                </CardTitle>
+                <Dialog open={showAddPrescription} onOpenChange={setShowAddPrescription}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-add-prescription">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Prescription
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add New Prescription</DialogTitle>
+                    </DialogHeader>
+                    <PrescriptionForm 
+                      initialData={{ patientId: patient?.id, patientName: patient?.name }}
+                      onSubmit={() => {
+                        setShowAddPrescription(false);
+                        queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {prescriptions.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <Card className="p-4" data-testid="metric-active-prescriptions">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {prescriptions.filter(p => p.status === 'active').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Active Prescriptions</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4" data-testid="metric-completed-prescriptions">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {prescriptions.filter(p => p.status === 'completed').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Completed Prescriptions</p>
+                      </div>
+                    </Card>
+                  </div>
+                  <div className="space-y-3">
+                    {prescriptions.map((prescription) => (
+                      <div key={prescription.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`row-prescription-${prescription.id}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={prescription.status === 'active' ? 'default' : 'secondary'}>
+                                {prescription.status}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(prescription.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="font-medium mb-1">
+                              {prescription.medicines.length} Medicine{prescription.medicines.length > 1 ? 's' : ''} Prescribed
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {prescription.medicines.slice(0, 2).map(m => m.name).join(', ')}
+                              {prescription.medicines.length > 2 && ` +${prescription.medicines.length - 2} more`}
+                            </p>
+                            {prescription.followUpDate && (
+                              <p className="text-sm text-blue-600 mt-1">
+                                Follow-up: {new Date(prescription.followUpDate).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" data-testid={`button-view-prescription-${prescription.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Prescription Details</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="font-medium">Status</p>
+                                    <Badge variant={prescription.status === 'active' ? 'default' : 'secondary'}>
+                                      {prescription.status}
+                                    </Badge>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Date</p>
+                                    <p>{new Date(prescription.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="font-medium mb-2">Medicines</p>
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Medicine</TableHead>
+                                        <TableHead>Dosage</TableHead>
+                                        <TableHead>Frequency</TableHead>
+                                        <TableHead>Duration</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {prescription.medicines.map((medicine, index) => (
+                                        <TableRow key={index}>
+                                          <TableCell>{medicine.name}</TableCell>
+                                          <TableCell>{medicine.dosage}</TableCell>
+                                          <TableCell>{medicine.frequency}</TableCell>
+                                          <TableCell>{medicine.duration}</TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                                {prescription.instructions && (
+                                  <div>
+                                    <p className="font-medium">Instructions</p>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{prescription.instructions}</p>
+                                  </div>
+                                )}
+                                {prescription.followUpDate && (
+                                  <div>
+                                    <p className="font-medium">Follow-up Date</p>
+                                    <p className="text-sm">{new Date(prescription.followUpDate).toLocaleDateString()}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                            </Dialog>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setBillingPrescriptionId(prescription.id);
+                                setShowAddBilling(true);
+                              }}
+                              data-testid={`button-generate-bill-${prescription.id}`}
+                            >
+                              <Receipt className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Stethoscope className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No prescriptions recorded yet.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => setShowAddPrescription(true)}
+                    data-testid="button-add-first-prescription"
+                  >
+                    Add First Prescription
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Billing & Invoices ({bills.length})
+                </CardTitle>
+                <Dialog open={showAddBilling} onOpenChange={(open) => {
+                  setShowAddBilling(open);
+                  if (!open) {
+                    setBillingPrescriptionId(undefined);
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-add-bill">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Generate Bill
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Generate New Bill</DialogTitle>
+                    </DialogHeader>
+                    <BillingForm 
+                      initialData={{ patientId: patient?.id, patientName: patient?.name }}
+                      prescriptionId={billingPrescriptionId}
+                      onSubmit={() => {
+                        setShowAddBilling(false);
+                        setBillingPrescriptionId(undefined);
+                        queryClient.invalidateQueries({ queryKey: ['/api/bills', patientId] });
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {bills.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Card className="p-4" data-testid="metric-pending-bills">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-orange-600">
+                          {bills.filter(b => b.status === 'pending').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Pending Bills</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4" data-testid="metric-paid-bills">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {bills.filter(b => b.status === 'paid').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Paid Bills</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4" data-testid="metric-total-paid">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-red-600">
+                          ₹{(bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0) / 100).toLocaleString()}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Total Paid</p>
+                      </div>
+                    </Card>
+                  </div>
+                  <div className="space-y-3">
+                    {bills.map((bill) => (
+                      <div key={bill.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`row-bill-${bill.id}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant={
+                                bill.status === 'paid' ? 'default' : 
+                                bill.status === 'overdue' ? 'destructive' : 'secondary'
+                              }>
+                                {bill.status}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(bill.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="font-medium mb-1">₹{(bill.amount / 100).toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">{bill.description}</p>
+                            {bill.paymentMethod && (
+                              <p className="text-sm text-blue-600 mt-1">
+                                Payment: {bill.paymentMethod}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" data-testid={`button-view-bill-${bill.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Bill Details</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <p className="font-medium">Amount</p>
+                                      <p className="text-lg font-bold">₹{(bill.amount / 100).toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">Status</p>
+                                      <Badge variant={
+                                        bill.status === 'paid' ? 'default' : 
+                                        bill.status === 'overdue' ? 'destructive' : 'secondary'
+                                      }>
+                                        {bill.status}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">Created</p>
+                                      <p>{new Date(bill.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                    {bill.paidAt && (
+                                      <div>
+                                        <p className="font-medium">Paid</p>
+                                        <p>{new Date(bill.paidAt).toLocaleDateString()}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">Description</p>
+                                    <p className="text-sm text-muted-foreground">{bill.description}</p>
+                                  </div>
+                                  {bill.paymentMethod && (
+                                    <div>
+                                      <p className="font-medium">Payment Method</p>
+                                      <p className="text-sm">{bill.paymentMethod}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Button variant="outline" size="sm" data-testid={`button-download-bill-${bill.id}`}>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No bills generated yet.</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => setShowAddBilling(true)}
+                    data-testid="button-add-first-bill"
+                  >
+                    Generate First Bill
+                  </Button>
                 </div>
               )}
             </CardContent>

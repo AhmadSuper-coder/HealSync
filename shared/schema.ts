@@ -58,6 +58,7 @@ export const prescriptions = pgTable("prescriptions", {
   medicines: jsonb("medicines").notNull(), // Array of {name, dosage, frequency, duration}
   instructions: text("instructions"),
   followUpDate: timestamp("follow_up_date"),
+  status: text("status").notNull().default("active"), // active, completed
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -67,6 +68,7 @@ export const bills = pgTable("bills", {
   doctorId: varchar("doctor_id").notNull(),
   patientId: varchar("patient_id").notNull(),
   patientName: text("patient_name").notNull(),
+  prescriptionId: varchar("prescription_id"), // Link to prescription if applicable
   amount: integer("amount").notNull(), // Amount in cents
   description: text("description").notNull(),
   status: text("status").notNull().default("pending"), // pending, paid, overdue
@@ -158,6 +160,31 @@ export type InsertPatientFile = z.infer<typeof insertPatientFileSchema>;
 
 export type TreatmentProgress = typeof treatmentProgress.$inferSelect;
 export type InsertTreatmentProgress = z.infer<typeof insertTreatmentProgressSchema>;
+
+// Communication methods schema
+export const communicationMethods = pgTable("communication_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  doctorId: varchar("doctor_id").notNull(),
+  patientId: varchar("patient_id").notNull(),
+  patientName: text("patient_name").notNull(),
+  method: text("method").notNull(), // whatsapp, email, sms
+  recipient: text("recipient").notNull(), // phone number or email
+  subject: text("subject"),
+  message: text("message").notNull(),
+  cost: integer("cost").default(0), // Cost in paise/cents
+  status: text("status").notNull().default("pending"), // pending, sent, delivered, failed
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommunicationMethodSchema = createInsertSchema(communicationMethods).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+});
+
+export type CommunicationMethod = typeof communicationMethods.$inferSelect;
+export type InsertCommunicationMethod = z.infer<typeof insertCommunicationMethodSchema>;
 
 // Medicine interface for prescriptions
 export interface Medicine {

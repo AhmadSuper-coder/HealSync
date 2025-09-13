@@ -29,6 +29,7 @@ const billingFormSchema = z.object({
   amount: z.string().min(1, "Amount is required"),
   description: z.string().min(1, "Description is required"),
   paymentMethod: z.string().optional(),
+  prescriptionId: z.string().optional(),
 });
 
 type BillingFormData = z.infer<typeof billingFormSchema>;
@@ -36,18 +37,19 @@ type BillingFormData = z.infer<typeof billingFormSchema>;
 interface Patient {
   id: string;
   name: string;
-  mobile: string;
+  phone: string;
   age: number;
   gender: string;
 }
 
 interface BillingFormProps {
-  onSubmit?: (data: BillingFormData & { patientName: string; patientMobile: string }) => void;
+  onSubmit?: (data: BillingFormData & { patientName: string; patientPhone: string }) => void;
   initialData?: Partial<BillingFormData>;
   isEditing?: boolean;
+  prescriptionId?: string;
 }
 
-export function BillingForm({ onSubmit, initialData, isEditing = false }: BillingFormProps) {
+export function BillingForm({ onSubmit, initialData, isEditing = false, prescriptionId }: BillingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const { toast } = useToast();
@@ -59,6 +61,7 @@ export function BillingForm({ onSubmit, initialData, isEditing = false }: Billin
       amount: initialData?.amount || "",
       description: initialData?.description || "",
       paymentMethod: initialData?.paymentMethod || "",
+      prescriptionId: initialData?.prescriptionId || prescriptionId || "",
     },
   });
 
@@ -84,12 +87,24 @@ export function BillingForm({ onSubmit, initialData, isEditing = false }: Billin
     try {
       const billingData = {
         ...data,
+        amount: parseInt(data.amount) * 100, // Convert to paise
         patientName: selectedPatient.name,
-        patientMobile: selectedPatient.mobile,
+        patientPhone: selectedPatient.phone,
+        prescriptionId: data.prescriptionId || prescriptionId || undefined,
       };
 
-      console.log('Bill generated:', billingData);
-      onSubmit?.(billingData);
+      // Create bill via API
+      const response = await fetch('/api/bills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(billingData),
+      });
+
+      if (response.ok) {
+        onSubmit?.(billingData);
+      } else {
+        throw new Error('Failed to create bill');
+      }
       toast({
         title: isEditing ? "Bill Updated" : "Bill Generated",
         description: `Bill for ${selectedPatient.name} has been ${isEditing ? 'updated' : 'generated'}.`,
@@ -142,7 +157,7 @@ export function BillingForm({ onSubmit, initialData, isEditing = false }: Billin
             {selectedPatient && (
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Selected Patient:</p>
-                <p className="font-medium">{selectedPatient.mobile} - {selectedPatient.name}</p>
+                <p className="font-medium">{selectedPatient.phone} - {selectedPatient.name}</p>
                 <p className="text-sm text-muted-foreground">{selectedPatient.age} years, {selectedPatient.gender}</p>
               </div>
             )}

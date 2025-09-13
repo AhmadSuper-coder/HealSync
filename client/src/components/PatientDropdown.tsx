@@ -19,7 +19,7 @@ import {
 interface Patient {
   id: string;
   name: string;
-  mobile: string;
+  phone: string;
   age: number;
   gender: string;
 }
@@ -62,7 +62,7 @@ export function PatientDropdown({
   const selectedPatient = patients.find(patient => patient.id === value);
 
   const formatPatientDisplay = (patient: Patient) => {
-    return `${patient.mobile} - ${patient.name}`;
+    return `${patient.phone} - ${patient.name}`;
   };
 
   return (
