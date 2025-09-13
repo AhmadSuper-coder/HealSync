@@ -8,6 +8,7 @@ import {
   Users,
   BarChart3,
   MessageSquare,
+  Heart,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -59,6 +60,11 @@ const items = [
     title: "Communication",
     url: "/communication",
     icon: MessageSquare,
+  },
+  {
+    title: "Feedback",
+    url: "/feedback",
+    icon: Heart,
   },
   {
     title: "Settings",
