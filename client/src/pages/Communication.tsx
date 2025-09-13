@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,13 +25,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Send, Bell, Users } from "lucide-react";
+import { MessageSquare, Send, Bell, Users, Phone, Mail, CheckCircle } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
+
+// Communication channel pricing (in INR)
+const CHANNEL_PRICING = {
+  whatsapp: { price: 0.25, label: "WhatsApp", icon: SiWhatsapp, description: "₹0.25 per message" },
+  email: { price: 0.10, label: "Email", icon: Mail, description: "₹0.10 per message" },
+  sms: { price: 1.50, label: "SMS", icon: Phone, description: "₹1.50 per message" },
+} as const;
+
+type CommunicationChannel = keyof typeof CHANNEL_PRICING;
 
 const messageFormSchema = z.object({
   recipient: z.string().min(1, "Recipient is required"),
   subject: z.string().min(1, "Subject is required"),
   message: z.string().min(1, "Message is required"),
   type: z.string().min(1, "Message type is required"),
+  channel: z.string().min(1, "Communication channel is required"),
 });
 
 type MessageFormData = z.infer<typeof messageFormSchema>;
@@ -40,6 +52,8 @@ interface Message {
   recipient: string;
   subject: string;
   type: "reminder" | "health-tip" | "follow-up" | "appointment";
+  channel: CommunicationChannel;
+  cost: number;
   status: "sent" | "delivered" | "failed";
   sentAt: string;
 }
@@ -47,6 +61,8 @@ interface Message {
 export default function Communication() {
   const [activeTab, setActiveTab] = useState("send");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<CommunicationChannel>("whatsapp");
+  const [recipientCount, setRecipientCount] = useState(1);
   const { toast } = useToast();
 
   // todo: remove mock functionality
@@ -56,14 +72,18 @@ export default function Communication() {
       recipient: "Rajesh Sharma",
       subject: "Appointment Reminder",
       type: "reminder",
+      channel: "whatsapp",
+      cost: 0.25,
       status: "delivered",
       sentAt: "2024-01-15 10:30",
     },
     {
       id: "2",
-      recipient: "All Patients",
+      recipient: "All Patients (50)",
       subject: "Winter Health Tips",
       type: "health-tip",
+      channel: "email",
+      cost: 5.00,
       status: "sent",
       sentAt: "2024-01-14 09:00",
     },
@@ -72,6 +92,8 @@ export default function Communication() {
       recipient: "Priya Patel",
       subject: "Follow-up Required",
       type: "follow-up",
+      channel: "sms",
+      cost: 1.50,
       status: "delivered",
       sentAt: "2024-01-13 14:15",
     },
@@ -84,18 +106,32 @@ export default function Communication() {
       subject: "",
       message: "",
       type: "",
+      channel: "whatsapp",
     },
   });
+
+  // Calculate estimated cost
+  const estimatedCost = recipientCount * CHANNEL_PRICING[selectedChannel].price;
 
   const handleSubmit = async (data: MessageFormData) => {
     setIsSubmitting(true);
     try {
-      console.log('Message sent:', data);
+      // Add channel and cost information
+      const messageData = {
+        ...data,
+        channel: selectedChannel,
+        cost: estimatedCost,
+        recipientCount,
+      };
+      
+      console.log('Message sent:', messageData);
       toast({
         title: "Message Sent",
-        description: `Message sent to ${data.recipient} successfully.`,
+        description: `Message sent via ${CHANNEL_PRICING[selectedChannel].label} to ${data.recipient}. Cost: ₹${estimatedCost.toFixed(2)}`,
       });
       form.reset();
+      form.setValue('channel', 'whatsapp');
+      setRecipientCount(1);
     } catch (error) {
       toast({
         title: "Error",
@@ -142,6 +178,24 @@ export default function Communication() {
         </p>
       </div>
 
+      {/* Communication Pricing Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {(Object.entries(CHANNEL_PRICING) as [CommunicationChannel, typeof CHANNEL_PRICING[CommunicationChannel]][]).map(([channel, info]) => {
+          const Icon = info.icon;
+          return (
+            <Card key={channel} className="text-center">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-center mb-2">
+                  <Icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold">{info.label}</h3>
+                <p className="text-sm text-muted-foreground">{info.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="send" data-testid="tab-send-message">Send Message</TabsTrigger>
@@ -150,14 +204,57 @@ export default function Communication() {
         </TabsList>
 
         <TabsContent value="send" className="space-y-6">
+          {/* Channel Selection */}
           <Card>
             <CardHeader>
-              <CardTitle>Send Message</CardTitle>
+              <CardTitle>Select Communication Channel</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {(Object.entries(CHANNEL_PRICING) as [CommunicationChannel, typeof CHANNEL_PRICING[CommunicationChannel]][]).map(([channel, info]) => {
+                  const Icon = info.icon;
+                  const isSelected = selectedChannel === channel;
+                  return (
+                    <div
+                      key={channel}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => {
+                        setSelectedChannel(channel);
+                        form.setValue('channel', channel);
+                      }}
+                      data-testid={`channel-option-${channel}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <div>
+                          <p className={`font-medium ${isSelected ? 'text-primary' : ''}`}>{info.label}</p>
+                          <p className="text-sm text-muted-foreground">{info.description}</p>
+                        </div>
+                        {isSelected && <CheckCircle className="h-5 w-5 text-primary ml-auto" />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Compose Message</CardTitle>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Estimated Cost</p>
+                  <p className="text-lg font-bold text-primary">₹{estimatedCost.toFixed(2)}</p>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="recipient"
@@ -165,8 +262,50 @@ export default function Communication() {
                         <FormItem>
                           <FormLabel>Recipient</FormLabel>
                           <FormControl>
-                            <Input placeholder="Search patient or select 'All Patients'" data-testid="input-recipient" {...field} />
+                            <Input
+                              placeholder="Search patient or select 'All Patients'"
+                              data-testid="input-recipient"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                // Auto-detect recipient count for cost calculation
+                                const value = e.target.value.toLowerCase();
+                                if (value.includes('all patients') || value.includes('all')) {
+                                  setRecipientCount(50); // Assume 50 patients for demo
+                                } else {
+                                  setRecipientCount(1);
+                                }
+                              }}
+                            />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="channel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Channel</FormLabel>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedChannel(value as CommunicationChannel);
+                          }} value={selectedChannel}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-channel">
+                                <SelectValue placeholder="Select channel" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {(Object.entries(CHANNEL_PRICING) as [CommunicationChannel, typeof CHANNEL_PRICING[CommunicationChannel]][]).map(([channel, info]) => (
+                                <SelectItem key={channel} value={channel}>
+                                  {info.label} - {info.description}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -282,9 +421,15 @@ export default function Communication() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge variant={getStatusColor(message.status) as any}>
-                          {message.status}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge variant={getStatusColor(message.status) as any}>
+                            {message.status}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {React.createElement(CHANNEL_PRICING[message.channel].icon, { className: "h-3 w-3" })}
+                            <span>₹{message.cost.toFixed(2)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
