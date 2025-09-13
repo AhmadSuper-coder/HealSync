@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { PrescriptionDetails } from "@/components/PrescriptionDetails";
 import { Button } from "@/components/ui/button";
@@ -13,56 +13,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Eye, Download, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Eye, Download, FileText, Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import type { Prescription } from "@shared/schema";
 
-interface Prescription {
-  id: string;
-  patientName: string;
-  patientMobile: string;
-  date: string;
-  status: "active" | "completed" | "cancelled";
-  medicineCount: number;
+// Extended prescription type with additional fields from API
+interface PrescriptionWithPhone extends Prescription {
+  patientPhone?: string;
+  medicines: Array<{ name: string; dosage: string; frequency: string; duration: string }>;
 }
 
-// todo: remove mock functionality
-const mockPrescriptions: Prescription[] = [
-  {
-    id: "1",
-    patientName: "Rajesh Sharma",
-    patientMobile: "+91 9876543210",
-    date: "2024-01-15",
-    status: "active",
-    medicineCount: 3,
-  },
-  {
-    id: "2",
-    patientName: "Priya Patel",
-    patientMobile: "+91 9876543211",
-    date: "2024-01-14",
-    status: "completed",
-    medicineCount: 2,
-  },
-  {
-    id: "3",
-    patientName: "Amit Kumar",
-    patientMobile: "+91 9876543212",
-    date: "2024-01-13",
-    status: "active",
-    medicineCount: 4,
-  },
-];
 
 export default function Prescriptions() {
   const [activeTab, setActiveTab] = useState("list");
   const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<string>("");
   const [isPrescriptionDetailsOpen, setIsPrescriptionDetailsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleViewPrescription = (prescription: Prescription) => {
+  // Fetch all prescriptions
+  const { data: prescriptions = [], isLoading } = useQuery<PrescriptionWithPhone[]>({
+    queryKey: ['/api/prescriptions'],
+  });
+
+  // Filter prescriptions based on search query
+  const filteredPrescriptions = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return prescriptions;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return prescriptions.filter((prescription: PrescriptionWithPhone) => {
+      const patientName = prescription.patientName?.toLowerCase() || '';
+      const patientPhone = prescription.patientPhone?.toLowerCase() || '';
+      
+      return patientName.includes(query) || patientPhone.includes(query);
+    });
+  }, [prescriptions, searchQuery]);
+
+  const handleViewPrescription = (prescription: PrescriptionWithPhone) => {
     setSelectedPrescriptionId(prescription.id);
     setIsPrescriptionDetailsOpen(true);
   };
 
-  const handleDownloadPrescription = (prescription: Prescription) => {
+  const handleDownloadPrescription = (prescription: PrescriptionWithPhone) => {
     console.log('Download prescription:', prescription.id);
     // TODO: Implement PDF download functionality
   };
@@ -80,8 +75,8 @@ export default function Prescriptions() {
     }
   };
 
-  const activeCount = mockPrescriptions.filter(p => p.status === "active").length;
-  const totalCount = mockPrescriptions.length;
+  const activeCount = filteredPrescriptions.filter((p: PrescriptionWithPhone) => p.status === "active").length;
+  const totalCount = prescriptions.length;
 
   return (
     <div className="space-y-6">
@@ -136,7 +131,20 @@ export default function Prescriptions() {
         <TabsContent value="list" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Prescriptions</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Recent Prescriptions</CardTitle>
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or mobile..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-search-prescriptions"
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -150,18 +158,25 @@ export default function Prescriptions() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockPrescriptions.map((prescription) => (
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        Loading prescriptions...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredPrescriptions.length > 0 ? (
+                    filteredPrescriptions.map((prescription: PrescriptionWithPhone) => (
                     <TableRow key={prescription.id} data-testid={`prescription-row-${prescription.id}`}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{prescription.patientName}</p>
-                          <p className="text-sm text-muted-foreground">{prescription.patientMobile}</p>
+                          <p className="text-sm text-muted-foreground">{prescription.patientPhone}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{prescription.date}</TableCell>
+                      <TableCell>{prescription.createdAt ? new Date(prescription.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {prescription.medicineCount} medicine{prescription.medicineCount !== 1 ? 's' : ''}
+                          {prescription.medicines?.length || 0} medicine{(prescription.medicines?.length || 0) !== 1 ? 's' : ''}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -190,32 +205,26 @@ export default function Prescriptions() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        {searchQuery ? 'No prescriptions found matching your search.' : 'No prescriptions found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
 
-              {mockPrescriptions.length === 0 && (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No prescriptions found.</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => setActiveTab("create")}
-                  >
-                    Create First Prescription
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="create" className="space-y-6">
           <PrescriptionForm
-            onSubmit={(data) => {
-              console.log('New prescription:', data);
+            onSubmit={() => {
               setActiveTab("list");
+              queryClient.invalidateQueries({ queryKey: ['/api/prescriptions'] });
             }}
           />
         </TabsContent>
