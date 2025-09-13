@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image, Eye, Plus, FilePlus, Receipt, Send, Download, Stethoscope, CreditCard } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image, Eye, Plus, FilePlus, Receipt, Send, Download, Stethoscope, CreditCard, RotateCcw, CheckCircle, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { BillingForm } from "@/components/BillingForm";
@@ -16,6 +16,110 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
 import type { Patient, Prescription, Bill, Medicine } from "@shared/schema";
+
+// Component for prescription status buttons
+function PrescriptionStatusButton({ prescription, targetStatus, patientId }: {
+  prescription: Prescription;
+  targetStatus: 'active' | 'completed';
+  patientId: string;
+}) {
+  const { toast } = useToast();
+  
+  const updateStatusMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('PATCH', `/api/prescriptions/${prescription.id}`, { status: targetStatus });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
+      toast({
+        title: "Success",
+        description: `Prescription marked as ${targetStatus}`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update prescription status",
+        variant: "destructive"
+      });
+    }
+  });
+
+  if ((targetStatus === 'completed' && prescription.status !== 'active') ||
+      (targetStatus === 'active' && prescription.status !== 'completed')) {
+    return null;
+  }
+
+  return (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => updateStatusMutation.mutate()}
+      disabled={updateStatusMutation.isPending}
+      data-testid={`button-${targetStatus === 'completed' ? 'complete' : 'activate'}-prescription-${prescription.id}`}
+      className={targetStatus === 'completed' 
+        ? "text-green-600 hover:text-green-700 hover:bg-green-50"
+        : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+      }
+    >
+      {targetStatus === 'completed' ? <FilePlus className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+    </Button>
+  );
+}
+
+// Component for billing status buttons
+function BillingStatusButton({ bill, targetStatus, patientId }: {
+  bill: Bill;
+  targetStatus: 'paid' | 'pending';
+  patientId: string;
+}) {
+  const { toast } = useToast();
+  
+  const updateStatusMutation = useMutation({
+    mutationFn: async () => {
+      const payload = targetStatus === 'paid' 
+        ? { status: targetStatus, paidAt: new Date().toISOString() }
+        : { status: targetStatus };
+      
+      return apiRequest('PATCH', `/api/bills/${bill.id}`, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bills', patientId] });
+      toast({
+        title: "Success",
+        description: `Bill marked as ${targetStatus}`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update bill status",
+        variant: "destructive"
+      });
+    }
+  });
+
+  if ((targetStatus === 'paid' && bill.status !== 'pending') ||
+      (targetStatus === 'pending' && bill.status !== 'paid')) {
+    return null;
+  }
+
+  return (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => updateStatusMutation.mutate()}
+      disabled={updateStatusMutation.isPending}
+      data-testid={`button-mark-${targetStatus}-${bill.id}`}
+      className={targetStatus === 'paid' 
+        ? "text-green-600 hover:text-green-700 hover:bg-green-50"
+        : "text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+      }
+    >
+      {targetStatus === 'paid' ? <CheckCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+    </Button>
+  );
+}
 
 export default function PatientDetails() {
   const [match, params] = useRoute("/patients/:id");
@@ -778,36 +882,16 @@ export default function PatientDetails() {
                                 />
                               </DialogContent>
                             </Dialog>
-                            {prescription.status === 'active' && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={async () => {
-                                  try {
-                                    await fetch(`/api/prescriptions/${prescription.id}`, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: 'completed' })
-                                    });
-                                    queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
-                                    toast({
-                                      title: "Success",
-                                      description: "Prescription marked as completed"
-                                    });
-                                  } catch (error) {
-                                    toast({
-                                      title: "Error",
-                                      description: "Failed to update prescription status",
-                                      variant: "destructive"
-                                    });
-                                  }
-                                }}
-                                data-testid={`button-complete-prescription-${prescription.id}`}
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                              >
-                                <FilePlus className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <PrescriptionStatusButton 
+                              prescription={prescription} 
+                              targetStatus="completed" 
+                              patientId={patientId!}
+                            />
+                            <PrescriptionStatusButton 
+                              prescription={prescription} 
+                              targetStatus="active" 
+                              patientId={patientId!}
+                            />
                             <Button 
                               variant="outline" 
                               size="sm" 
@@ -1003,6 +1087,16 @@ export default function PatientDetails() {
                                 />
                               </DialogContent>
                             </Dialog>
+                            <BillingStatusButton 
+                              bill={bill} 
+                              targetStatus="paid" 
+                              patientId={patientId!}
+                            />
+                            <BillingStatusButton 
+                              bill={bill} 
+                              targetStatus="pending" 
+                              patientId={patientId!}
+                            />
                             <Button variant="outline" size="sm" data-testid={`button-download-bill-${bill.id}`}>
                               <Download className="h-4 w-4" />
                             </Button>
