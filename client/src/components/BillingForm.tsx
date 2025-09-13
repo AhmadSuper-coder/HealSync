@@ -122,7 +122,7 @@ export function BillingForm({ onSubmit, initialData, isEditing = false, prescrip
     try {
       const billingData = {
         ...data,
-        amount: parseInt(data.amount) * 100, // Convert to paise
+        amount: (parseInt(data.amount) * 100).toString(), // Convert to paise and back to string
         patientName: selectedPatient.name,
         patientPhone: selectedPatient.phone,
         prescriptionId: data.prescriptionId || preselectedPrescriptionId || prescriptionId || undefined,

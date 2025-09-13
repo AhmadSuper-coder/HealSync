@@ -31,17 +31,32 @@ export default function PatientDetails() {
   // Fetch patient data
   const { data: patient, isLoading: isPatientLoading } = useQuery({
     queryKey: ['/api/patients', patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}`);
+      if (!response.ok) throw new Error('Failed to fetch patient');
+      return response.json();
+    },
     enabled: !!patientId,
   });
 
   // Fetch prescriptions and bills using useQuery for proper cache management
   const { data: prescriptions = [], isLoading: isPrescriptionsLoading } = useQuery({
     queryKey: ['/api/prescriptions', patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/prescriptions?patientId=${patientId}`);
+      if (!response.ok) throw new Error('Failed to fetch prescriptions');
+      return response.json();
+    },
     enabled: !!patientId,
   });
 
   const { data: bills = [], isLoading: isBillsLoading } = useQuery({
     queryKey: ['/api/bills', patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/bills?patientId=${patientId}`);
+      if (!response.ok) throw new Error('Failed to fetch bills');
+      return response.json();
+    },
     enabled: !!patientId,
   });
 

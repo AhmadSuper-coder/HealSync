@@ -228,8 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (index !== -1) {
       mockPrescriptions[index] = { 
         ...mockPrescriptions[index], 
-        ...req.body,
-        updatedAt: new Date().toISOString()
+        ...req.body
       };
       res.json(mockPrescriptions[index]);
     } else {
@@ -243,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .filter(p => p.patientId === req.params.patientId && p.status === 'active')
       .map(p => {
         p.status = 'completed';
-        p.updatedAt = new Date().toISOString();
+        // Remove updatedAt as it's not in the schema
         return p;
       });
     
