@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -46,17 +46,19 @@ interface PrescriptionFormProps {
   onSubmit?: (data: PrescriptionFormData & { patientName: string; patientPhone: string }) => void;
   initialData?: Partial<PrescriptionFormData>;
   isEditing?: boolean;
+  preselectedPatientId?: string;
 }
 
-export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: PrescriptionFormProps) {
+export function PrescriptionForm({ onSubmit, initialData, isEditing = false, preselectedPatientId }: PrescriptionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const { toast } = useToast();
 
   const form = useForm<PrescriptionFormData>({
     resolver: zodResolver(prescriptionFormSchema),
     defaultValues: {
-      patientId: initialData?.patientId || "",
+      patientId: preselectedPatientId || initialData?.patientId || "",
       medicines: initialData?.medicines || [{ name: "", dosage: "", frequency: "", duration: "" }],
       instructions: initialData?.instructions || "",
       followUpDate: initialData?.followUpDate || "",
@@ -67,6 +69,30 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
     control: form.control,
     name: "medicines",
   });
+
+  // Fetch patients and auto-select if preselectedPatientId is provided
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const response = await fetch('/api/patients');
+        const patientsData = await response.json();
+        setPatients(patientsData);
+        
+        // Auto-select patient if preselectedPatientId is provided
+        if (preselectedPatientId && patientsData.length > 0) {
+          const patient = patientsData.find((p: Patient) => p.id === preselectedPatientId);
+          if (patient) {
+            setSelectedPatient(patient);
+            form.setValue("patientId", patient.id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch patients:', error);
+      }
+    };
+    
+    fetchPatients();
+  }, [preselectedPatientId, form]);
 
   const handlePatientSelect = (patient: Patient | null) => {
     setSelectedPatient(patient);
@@ -93,6 +119,19 @@ export function PrescriptionForm({ onSubmit, initialData, isEditing = false }: P
         patientName: selectedPatient.name,
         patientPhone: selectedPatient.phone,
       };
+
+      // Mark previous prescriptions as completed if this is a new prescription
+      if (!isEditing) {
+        try {
+          await fetch(`/api/patients/${selectedPatient.id}/prescriptions/complete`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          console.error('Failed to mark previous prescriptions as completed:', error);
+          // Continue with creating new prescription even if this fails
+        }
+      }
 
       // Create prescription via API
       const response = await fetch('/api/prescriptions', {

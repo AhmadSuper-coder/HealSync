@@ -420,7 +420,7 @@ export default function PatientDetails() {
                       <DialogTitle>Add New Prescription</DialogTitle>
                     </DialogHeader>
                     <PrescriptionForm 
-                      initialData={{ patientId: patient?.id, patientName: patient?.name }}
+                      preselectedPatientId={patient?.id}
                       onSubmit={() => {
                         setShowAddPrescription(false);
                         queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });

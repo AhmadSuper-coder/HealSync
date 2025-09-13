@@ -222,6 +222,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(newPrescription);
   });
 
+  // Update prescription status
+  app.patch('/api/prescriptions/:id', (req, res) => {
+    const index = mockPrescriptions.findIndex(p => p.id === req.params.id);
+    if (index !== -1) {
+      mockPrescriptions[index] = { 
+        ...mockPrescriptions[index], 
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      };
+      res.json(mockPrescriptions[index]);
+    } else {
+      res.status(404).json({ error: "Prescription not found" });
+    }
+  });
+
+  // Mark all prescriptions as completed for a patient
+  app.patch('/api/patients/:patientId/prescriptions/complete', (req, res) => {
+    const updated = mockPrescriptions
+      .filter(p => p.patientId === req.params.patientId && p.status === 'active')
+      .map(p => {
+        p.status = 'completed';
+        p.updatedAt = new Date().toISOString();
+        return p;
+      });
+    
+    res.json({ 
+      message: `Marked ${updated.length} prescriptions as completed`,
+      updatedCount: updated.length
+    });
+  });
+
   // Bills endpoints
   app.get('/api/bills', (req, res) => {
     const { patientId } = req.query;
