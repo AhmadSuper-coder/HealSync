@@ -599,8 +599,8 @@ export default function PatientDetails() {
                       <DialogTitle>Generate New Bill</DialogTitle>
                     </DialogHeader>
                     <BillingForm 
-                      initialData={{ patientId: patient?.id, patientName: patient?.name }}
-                      prescriptionId={billingPrescriptionId}
+                      preselectedPatientId={patient?.id}
+                      preselectedPrescriptionId={billingPrescriptionId}
                       onSubmit={() => {
                         setShowAddBilling(false);
                         setBillingPrescriptionId(undefined);

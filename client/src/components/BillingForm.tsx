@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,23 +47,58 @@ interface BillingFormProps {
   initialData?: Partial<BillingFormData>;
   isEditing?: boolean;
   prescriptionId?: string;
+  preselectedPatientId?: string;
+  preselectedPrescriptionId?: string;
 }
 
-export function BillingForm({ onSubmit, initialData, isEditing = false, prescriptionId }: BillingFormProps) {
+export function BillingForm({ onSubmit, initialData, isEditing = false, prescriptionId, preselectedPatientId, preselectedPrescriptionId }: BillingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const { toast } = useToast();
 
   const form = useForm<BillingFormData>({
     resolver: zodResolver(billingFormSchema),
     defaultValues: {
-      patientId: initialData?.patientId || "",
+      patientId: preselectedPatientId || initialData?.patientId || "",
       amount: initialData?.amount || "",
       description: initialData?.description || "",
       paymentMethod: initialData?.paymentMethod || "",
-      prescriptionId: initialData?.prescriptionId || prescriptionId || "",
+      prescriptionId: initialData?.prescriptionId || preselectedPrescriptionId || prescriptionId || "",
     },
   });
+
+  // Fetch patients and auto-select if preselectedPatientId is provided
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const response = await fetch('/api/patients');
+        const patientsData = await response.json();
+        setPatients(patientsData);
+        
+        // Auto-select patient if preselectedPatientId is provided
+        if (preselectedPatientId && patientsData.length > 0) {
+          const patient = patientsData.find((p: Patient) => p.id === preselectedPatientId);
+          if (patient) {
+            setSelectedPatient(patient);
+            form.setValue("patientId", patient.id);
+          }
+        }
+        
+        // Auto-select patient for editing scenario when only initialData.patientId is provided
+        if (!preselectedPatientId && initialData?.patientId && patientsData.length > 0) {
+          const patient = patientsData.find((p: Patient) => p.id === initialData.patientId);
+          if (patient) {
+            setSelectedPatient(patient);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch patients:', error);
+      }
+    };
+    
+    fetchPatients();
+  }, [preselectedPatientId, form]);
 
   const handlePatientSelect = (patient: Patient | null) => {
     setSelectedPatient(patient);
@@ -90,7 +125,7 @@ export function BillingForm({ onSubmit, initialData, isEditing = false, prescrip
         amount: parseInt(data.amount) * 100, // Convert to paise
         patientName: selectedPatient.name,
         patientPhone: selectedPatient.phone,
-        prescriptionId: data.prescriptionId || prescriptionId || undefined,
+        prescriptionId: data.prescriptionId || preselectedPrescriptionId || prescriptionId || undefined,
       };
 
       // Create bill via API
