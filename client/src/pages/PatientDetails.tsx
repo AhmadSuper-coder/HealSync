@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
+import { useRouter } from "next/router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image, Eye, Plus, FilePlus, Receipt, Send, Download, Stethoscope, CreditCard, RotateCcw, CheckCircle, Clock } from "lucide-react";
-import { Link } from "wouter";
+import Link from "next/link";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { BillingForm } from "@/components/BillingForm";
 import { useToast } from "@/hooks/use-toast";
@@ -122,7 +122,8 @@ function BillingStatusButton({ bill, targetStatus, patientId }: {
 }
 
 export default function PatientDetails() {
-  const [match, params] = useRoute("/patients/:id");
+  const router = useRouter();
+  const { id: patientId } = router.query;
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [showAddPrescription, setShowAddPrescription] = useState(false);
@@ -132,7 +133,7 @@ export default function PatientDetails() {
   const [editingDocument, setEditingDocument] = useState<{id: string; name: string; type: string; date: string; size: string} | null>(null);
   const { toast } = useToast();
 
-  const patientId = params?.id;
+  // patientId is now extracted from router.query above
 
   // Fetch patient data
   const { data: patient, isLoading: isPatientLoading } = useQuery({

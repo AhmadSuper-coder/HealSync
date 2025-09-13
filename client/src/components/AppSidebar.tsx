@@ -11,7 +11,8 @@ import {
   Heart,
   Megaphone,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 import {
   Sidebar,
@@ -80,7 +81,8 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const [location] = useLocation();
+  const router = useRouter();
+  const location = router.asPath || '/';
 
   return (
     <Sidebar>
@@ -106,8 +108,10 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild data-active={isActive}>
                       <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <div className="flex items-center gap-2">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </div>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

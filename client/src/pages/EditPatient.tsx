@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "wouter";
+import Link from "next/link";
 import { PatientForm } from "@/components/PatientForm";
 
 interface Patient {
@@ -20,16 +20,16 @@ interface Patient {
 }
 
 export default function EditPatient() {
-  const [match, params] = useRoute("/patients/:id/edit");
-  const [, setLocation] = useLocation();
+  const router = useRouter();
+  const { id } = router.query;
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (params?.id) {
-      fetchPatient(params.id);
+    if (id && typeof id === 'string') {
+      fetchPatient(id);
     }
-  }, [params?.id]);
+  }, [id]);
 
   const fetchPatient = async (id: string) => {
     try {
@@ -48,7 +48,7 @@ export default function EditPatient() {
   const handlePatientUpdate = (data: any) => {
     console.log('Patient updated:', data);
     // Navigate back to patient details page
-    setLocation(`/patients/${params?.id}`);
+    router.push(`/patients/${id}`);
   };
 
   if (isLoading) {

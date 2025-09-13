@@ -1,6 +1,6 @@
-// import { Switch, Route } from "wouter"; // Commented out for Next.js SSR compatibility
+import type { AppProps } from "next/app";
 import { useState, useEffect } from "react";
-import { queryClient } from "./lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,25 +10,14 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Dashboard from "@/pages/Dashboard";
-import Patients from "@/pages/Patients";
-import PatientDetails from "@/pages/PatientDetails";
-import EditPatient from "@/pages/EditPatient";
-import Appointments from "@/pages/Appointments";
-import Prescriptions from "@/pages/Prescriptions";
-import Billing from "@/pages/Billing";
-import Reports from "@/pages/Reports";
-import Communication from "@/pages/Communication";
-import { Feedback } from "@/pages/Feedback";
-import { Announcements } from "@/pages/Announcements";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/not-found";
 import { X, Pin, Megaphone } from "lucide-react";
 import type { Announcement } from "@shared/schema";
+import "@/index.css";
 
 // Global Announcement Banner Component
 function AnnouncementBanner() {
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem('dismissedAnnouncements');
     return saved ? JSON.parse(saved) : [];
   });
@@ -52,7 +41,9 @@ function AnnouncementBanner() {
   const dismissAnnouncement = (announcementId: string) => {
     const newDismissed = [...dismissedAnnouncements, announcementId];
     setDismissedAnnouncements(newDismissed);
-    localStorage.setItem('dismissedAnnouncements', JSON.stringify(newDismissed));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dismissedAnnouncements', JSON.stringify(newDismissed));
+    }
   };
 
   if (!currentAnnouncement) return null;
@@ -99,69 +90,42 @@ function AnnouncementBanner() {
   );
 }
 
-// Wouter Router commented out for Next.js SSR compatibility
-function Router() {
-  return (
-    <div className="text-center py-12">
-      <p className="text-muted-foreground">
-        This is the Vite app entry point. Use Next.js pages instead.
-      </p>
-    </div>
-  );
-}
-
-/* Original wouter routing - commented out for SSR:
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/patients" component={Patients} />
-      <Route path="/patients/:id/edit" component={EditPatient} />
-      <Route path="/patients/:id" component={PatientDetails} />
-      <Route path="/appointments" component={Appointments} />
-      <Route path="/prescriptions" component={Prescriptions} />
-      <Route path="/billing" component={Billing} />
-      <Route path="/reports" component={Reports} />
-      <Route path="/communication" component={Communication} />
-      <Route path="/feedback" component={Feedback} />
-      <Route path="/announcements" component={Announcements} />
-      <Route path="/settings" component={Settings} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-*/
-
-function App() {
+function Layout({ children }: { children: React.ReactNode }) {
   const style = {
     "--sidebar-width": "20rem",
     "--sidebar-width-icon": "4rem",
   };
 
   return (
+    <SidebarProvider style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-col flex-1">
+          <header className="flex items-center justify-between p-4 border-b">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <ThemeToggle />
+          </header>
+          <AnnouncementBanner />
+          <main className="flex-1 overflow-auto p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-col flex-1">
-                <header className="flex items-center justify-between p-4 border-b">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
-                </header>
-                <AnnouncementBanner />
-                <main className="flex-1 overflow-auto p-6">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
           <Toaster />
         </ThemeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;

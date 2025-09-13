@@ -3,7 +3,7 @@ import { ReportsChart } from "@/components/ReportsChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Stethoscope, Receipt } from "lucide-react";
-import { Link } from "wouter";
+import Link from "next/link";
 
 interface QuickActionProps {
   title: string;

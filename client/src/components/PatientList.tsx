@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Search, Edit, Eye, FileText, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useLocation } from "wouter";
+import { useRouter } from "next/router";
 import {
   Table,
   TableBody,
@@ -82,7 +82,7 @@ const mockPatients: Patient[] = [
 export function PatientList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [patients] = useState<Patient[]>(mockPatients);
-  const [, setLocation] = useLocation();
+  const router = useRouter();
 
   const filteredPatients = patients.filter(
     (patient) =>
@@ -91,11 +91,11 @@ export function PatientList() {
   );
 
   const handleViewPatient = (patient: Patient) => {
-    setLocation(`/patients/${patient.id}`);
+    router.push(`/patients/${patient.id}`);
   };
 
   const handleEditPatient = (patient: Patient) => {
-    setLocation(`/patients/${patient.id}/edit`);
+    router.push(`/patients/${patient.id}/edit`);
   };
 
   const handleCallPatient = (patient: Patient) => {
