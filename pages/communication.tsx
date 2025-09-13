@@ -1,3 +1,3 @@
-import Communication from "@/pages/Communication";
+import Communication from "@pages/Communication";
 
 export default Communication;

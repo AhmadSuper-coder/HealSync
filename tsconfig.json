@@ -4,7 +4,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "client/src/**/*",
     "shared/**/*",
     "server/**/*"
   ],
@@ -42,10 +41,13 @@
     ],
     "paths": {
       "@/*": [
-        "./client/src/*"
+        "./*"
       ],
       "@shared/*": [
         "./shared/*"
+      ],
+      "@pages/*": [
+        "./page-components/*"
       ]
     },
     "target": "ES2017",

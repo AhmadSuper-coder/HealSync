@@ -1,3 +1,3 @@
-import Appointments from "@/pages/Appointments";
+import Appointments from "@pages/Appointments";
 
 export default Appointments;

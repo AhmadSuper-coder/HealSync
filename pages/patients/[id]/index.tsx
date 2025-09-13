@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import PatientDetails from "@/pages/PatientDetails";
+import PatientDetails from "@pages/PatientDetails";
 
 export default function PatientDetailsPage() {
   const router = useRouter();

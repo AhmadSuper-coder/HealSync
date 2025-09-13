@@ -1,3 +1,3 @@
-import Billing from "@/pages/Billing";
+import Billing from "@pages/Billing";
 
 export default Billing;

@@ -1,3 +1,3 @@
-import Prescriptions from "@/pages/Prescriptions";
+import Prescriptions from "@pages/Prescriptions";
 
 export default Prescriptions;

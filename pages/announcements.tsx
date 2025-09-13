@@ -1,3 +1,3 @@
-import { Announcements } from "@/pages/Announcements";
+import { Announcements } from "@pages/Announcements";
 
 export default Announcements;

@@ -1,3 +1,3 @@
-import { Feedback } from "@/pages/Feedback";
+import { Feedback } from "@pages/Feedback";
 
 export default Feedback;

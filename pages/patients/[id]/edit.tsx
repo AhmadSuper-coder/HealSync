@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import EditPatient from "@/pages/EditPatient";
+import EditPatient from "@pages/EditPatient";
 
 export default function EditPatientPage() {
   const router = useRouter();

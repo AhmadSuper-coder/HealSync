@@ -10,8 +10,9 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, 'client/src'),
+      '@': path.resolve(__dirname, '.'),
       '@shared': path.resolve(__dirname, 'shared'),
+      '@pages': path.resolve(__dirname, 'page-components'),
     };
 
     // Fix "process is not defined" errors on client side

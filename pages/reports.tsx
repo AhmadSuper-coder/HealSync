@@ -1,3 +1,3 @@
-import Reports from "@/pages/Reports";
+import Reports from "@pages/Reports";
 
 export default Reports;
