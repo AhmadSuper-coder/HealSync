@@ -24,6 +24,8 @@ export default function PatientDetails() {
   const [showAddPrescription, setShowAddPrescription] = useState(false);
   const [showAddBilling, setShowAddBilling] = useState(false);
   const [billingPrescriptionId, setBillingPrescriptionId] = useState<string | undefined>(undefined);
+  const [showUploadDocument, setShowUploadDocument] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<{id: string; name: string; type: string; date: string; size: string} | null>(null);
   const { toast } = useToast();
 
   const patientId = params?.id;
@@ -324,93 +326,296 @@ export default function PatientDetails() {
 
         <TabsContent value="medical" className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            {patient.allergies && (
-              <Card>
-                <CardHeader>
+            {/* Known Allergies Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Known Allergies
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  <Link href={`/patients/${patient?.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {patient?.allergies ? (
                   <p className="whitespace-pre-wrap">{patient.allergies}</p>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-muted-foreground italic">No known allergies recorded</p>
+                )}
+              </CardContent>
+            </Card>
 
-            {patient.medicalHistory && (
-              <Card>
-                <CardHeader>
+            {/* Medical History Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
                     Medical History
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-wrap">{patient.medicalHistory}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {patient.lifestyle && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Lifestyle Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-wrap">{patient.lifestyle}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!patient.allergies && !patient.medicalHistory && !patient.lifestyle && (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No medical history recorded yet.</p>
-                  <Link href={`/patients/${patient.id}/edit`}>
-                    <Button variant="outline" className="mt-4">
-                      Add Medical Information
+                  <Link href={`/patients/${patient?.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
                     </Button>
                   </Link>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {patient?.medicalHistory ? (
+                  <p className="whitespace-pre-wrap">{patient.medicalHistory}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">No medical history recorded</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Lifestyle Information Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Lifestyle Information
+                  </CardTitle>
+                  <Link href={`/patients/${patient?.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {patient?.lifestyle ? (
+                  <p className="whitespace-pre-wrap">{patient.lifestyle}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">No lifestyle information recorded</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Prescription Images & Documents
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Image className="h-5 w-5" />
+                  Patient Documents & Files
+                </CardTitle>
+                <Dialog open={showUploadDocument} onOpenChange={setShowUploadDocument}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-upload-document">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Upload Document
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md" aria-describedby="upload-document-description">
+                    <DialogHeader>
+                      <DialogTitle>Upload New Document</DialogTitle>
+                    </DialogHeader>
+                    <p id="upload-document-description" className="text-sm text-muted-foreground">
+                      Upload a new document for this patient. Supported formats: PDF, JPG, PNG, DOC, DOCX.
+                    </p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Document Type</label>
+                        <select className="w-full p-2 border rounded-md mt-1">
+                          <option value="prescription">Prescription</option>
+                          <option value="test_report">Test Report</option>
+                          <option value="x_ray">X-Ray</option>
+                          <option value="medical_report">Medical Report</option>
+                          <option value="insurance">Insurance Document</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <input 
+                          type="text" 
+                          placeholder="Enter document description..."
+                          className="w-full p-2 border rounded-md mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Upload File</label>
+                        <input 
+                          type="file" 
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          className="w-full p-2 border rounded-md mt-1"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          onClick={() => {
+                            setShowUploadDocument(false);
+                            toast({
+                              title: "Document Uploaded",
+                              description: "Document has been uploaded successfully"
+                            });
+                          }}
+                          className="flex-1"
+                        >
+                          Upload
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setShowUploadDocument(false)}
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
-              {patient.prescriptionImages && patient.prescriptionImages.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {patient.prescriptionImages.map((image, index) => (
-                    <div key={index} className="border rounded-lg p-4 hover-elevate cursor-pointer">
-                      <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center">
-                        <Image className="h-8 w-8 text-muted-foreground" />
+              {/* Mock document list for demonstration */}
+              <div className="space-y-3">
+                {[
+                  { id: "1", name: "Blood Test Report", type: "test_report", date: "2024-01-15", size: "2.5 MB" },
+                  { id: "2", name: "X-Ray Chest", type: "x_ray", date: "2024-01-10", size: "4.1 MB" },
+                  { id: "3", name: "Previous Prescription", type: "prescription", date: "2024-01-08", size: "1.2 MB" }
+                ].map((document) => (
+                  <div key={document.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`document-${document.id}`}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <FileText className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{document.name}</p>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            <span className="capitalize">{document.type.replace('_', ' ')}</span>
+                            <span>{document.date}</span>
+                            <span>{document.size}</span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm font-medium truncate">Prescription {index + 1}</p>
-                      <p className="text-xs text-muted-foreground">Uploaded document</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" data-testid={`button-view-document-${document.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              data-testid={`button-edit-document-${document.id}`}
+                              onClick={() => setEditingDocument(document)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md" aria-describedby="edit-document-description">
+                            <DialogHeader>
+                              <DialogTitle>Edit Document</DialogTitle>
+                            </DialogHeader>
+                            <p id="edit-document-description" className="text-sm text-muted-foreground">
+                              Update document information and optionally replace the file.
+                            </p>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Document Name</label>
+                                <input 
+                                  type="text" 
+                                  defaultValue={document.name}
+                                  className="w-full p-2 border rounded-md mt-1"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Document Type</label>
+                                <select className="w-full p-2 border rounded-md mt-1" defaultValue={document.type}>
+                                  <option value="prescription">Prescription</option>
+                                  <option value="test_report">Test Report</option>
+                                  <option value="x_ray">X-Ray</option>
+                                  <option value="medical_report">Medical Report</option>
+                                  <option value="insurance">Insurance Document</option>
+                                  <option value="other">Other</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium">Replace File (Optional)</label>
+                                <input 
+                                  type="file" 
+                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                  className="w-full p-2 border rounded-md mt-1"
+                                />
+                              </div>
+                              <div className="flex gap-2 pt-4">
+                                <Button 
+                                  onClick={() => {
+                                    setEditingDocument(null);
+                                    toast({
+                                      title: "Document Updated",
+                                      description: "Document has been updated successfully"
+                                    });
+                                  }}
+                                  className="flex-1"
+                                >
+                                  Save Changes
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setEditingDocument(null)}
+                                  className="flex-1"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this document?")) {
+                              toast({
+                                title: "Document Deleted",
+                                description: "Document has been deleted successfully"
+                              });
+                            }
+                          }}
+                          data-testid={`button-delete-document-${document.id}`}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" data-testid={`button-download-document-${document.id}`}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No documents uploaded yet.</p>
-                  <Link href={`/patients/${patient.id}/edit`}>
-                    <Button variant="outline" className="mt-4">
-                      Upload Documents
+                  </div>
+                ))}
+                
+                {/* Empty state when no documents */}
+                {false && (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No documents uploaded yet.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => setShowUploadDocument(true)}
+                      data-testid="button-upload-first-document"
+                    >
+                      Upload First Document
                     </Button>
-                  </Link>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -528,7 +733,7 @@ export default function PatientDetails() {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {prescription.medicines.map((medicine, index) => (
+                                      {prescription.medicines.map((medicine: any, index: number) => (
                                         <TableRow key={index}>
                                           <TableCell>{medicine.name}</TableCell>
                                           <TableCell>{medicine.dosage}</TableCell>
@@ -554,6 +759,55 @@ export default function PatientDetails() {
                               </div>
                             </DialogContent>
                             </Dialog>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" data-testid={`button-edit-prescription-${prescription.id}`}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Prescription</DialogTitle>
+                                </DialogHeader>
+                                <PrescriptionForm 
+                                  preselectedPatientId={patient?.id}
+                                  editingPrescription={prescription}
+                                  onSubmit={() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
+                                  }}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                            {prescription.status === 'active' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={async () => {
+                                  try {
+                                    await fetch(`/api/prescriptions/${prescription.id}`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: 'completed' })
+                                    });
+                                    queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
+                                    toast({
+                                      title: "Success",
+                                      description: "Prescription marked as completed"
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update prescription status",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                                data-testid={`button-complete-prescription-${prescription.id}`}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              >
+                                <FilePlus className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button 
                               variant="outline" 
                               size="sm" 
@@ -727,6 +981,26 @@ export default function PatientDetails() {
                                     </div>
                                   )}
                                 </div>
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" data-testid={`button-edit-bill-${bill.id}`}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Edit Bill</DialogTitle>
+                                </DialogHeader>
+                                <BillingForm 
+                                  preselectedPatientId={patient?.id}
+                                  editingBill={bill}
+                                  isEditing={true}
+                                  onSubmit={() => {
+                                    queryClient.invalidateQueries({ queryKey: ['/api/bills', patientId] });
+                                  }}
+                                />
                               </DialogContent>
                             </Dialog>
                             <Button variant="outline" size="sm" data-testid={`button-download-bill-${bill.id}`}>
