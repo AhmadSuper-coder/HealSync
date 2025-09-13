@@ -1,3 +1,3 @@
-import Dashboard from "@/pages/Dashboard";
+import LandingPage from "./landing";
 
-export default Dashboard;
+export default LandingPage;

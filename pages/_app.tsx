@@ -1,5 +1,7 @@
 import type { AppProps } from "next/app";
 import { useState, useEffect } from "react";
+import { SessionProvider } from "next-auth/react";
+import { useRouter } from "next/router";
 import { queryClient } from "@/lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
