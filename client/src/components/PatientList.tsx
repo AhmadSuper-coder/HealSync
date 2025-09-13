@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Eye } from "lucide-react";
+import { Search, Edit, Eye, FileText, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
@@ -13,6 +13,12 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Patient {
   id: string;
@@ -88,6 +94,18 @@ export function PatientList() {
     setLocation(`/patients/${patient.id}`);
   };
 
+  const handleEditPatient = (patient: Patient) => {
+    setLocation(`/patients/${patient.id}/edit`);
+  };
+
+  const handleCallPatient = (patient: Patient) => {
+    console.log('Call patient:', patient.phone);
+  };
+
+  const handleViewHistory = (patient: Patient) => {
+    console.log('View patient medical history:', patient.id);
+  };
+
   const getStatusColor = (status: string) => {
     return status === "active" ? "default" : "secondary";
   };
@@ -138,15 +156,31 @@ export function PatientList() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleViewPatient(patient)}
-                    data-testid={`button-view-patient-${patient.id}`}
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    View Details
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" data-testid={`button-actions-${patient.id}`}>
+                        Actions
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleViewPatient(patient)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditPatient(patient)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Patient
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCallPatient(patient)}>
+                        <Phone className="mr-2 h-4 w-4" />
+                        Call Patient
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewHistory(patient)}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Medical History
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
