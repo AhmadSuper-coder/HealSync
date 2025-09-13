@@ -118,16 +118,38 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  
+  // Determine if this is a dashboard page that needs the sidebar layout
+  const isDashboardPage = router.pathname.startsWith('/dashboard') || 
+                          router.pathname.startsWith('/patients') || 
+                          router.pathname.startsWith('/revenue') ||
+                          router.pathname.startsWith('/appointments') ||
+                          router.pathname.startsWith('/documents') ||
+                          router.pathname.startsWith('/prescriptions') ||
+                          router.pathname.startsWith('/billing') ||
+                          router.pathname.startsWith('/communication') ||
+                          router.pathname.startsWith('/announcements') ||
+                          router.pathname.startsWith('/reports') ||
+                          router.pathname.startsWith('/feedback') ||
+                          router.pathname.startsWith('/settings');
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ThemeProvider>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-          <Toaster />
-        </ThemeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <SessionProvider session={pageProps.session}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ThemeProvider>
+            {isDashboardPage ? (
+              <Layout>
+                <Component {...pageProps} />
+              </Layout>
+            ) : (
+              <Component {...pageProps} />
+            )}
+            <Toaster />
+          </ThemeProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }
