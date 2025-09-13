@@ -42,10 +42,11 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      // Add Django tokens to session
-      session.access_token = token.access_token as string
-      session.refresh_token = token.refresh_token as string
-      session.doctor_id = token.doctor_id as string
+      // Only expose minimal user info to client
+      // Access tokens stay server-side in JWT
+      if (token.doctor_id) {
+        session.doctor_id = token.doctor_id as string
+      }
       return session
     },
   },
