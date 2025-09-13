@@ -215,12 +215,6 @@
   }
 }
 
-@layer utilities {
-  .border-border {
-    border-color: hsl(var(--border));
-  }
-}
-
 /**
  * Using the elevate system.
  * Automatic contrast adjustment.
