@@ -1,4 +1,4 @@
-import { SessionProvider } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
@@ -10,8 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LandingPage() {
   return (
-    <SessionProvider>
-      <ThemeProvider>
+    <ThemeProvider>
         <div className="min-h-screen bg-white dark:bg-gray-900">
           {/* Navigation */}
           <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
@@ -33,7 +32,11 @@ export default function LandingPage() {
                 
                 <div className="flex items-center space-x-4">
                   <ThemeToggle />
-                  <button className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors" data-testid="button-login">
+                  <button 
+                    onClick={() => signIn("google")}
+                    className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-colors" 
+                    data-testid="button-login"
+                  >
                     Login
                   </button>
                 </div>
@@ -61,6 +64,5 @@ export default function LandingPage() {
           <Footer />
         </div>
       </ThemeProvider>
-    </SessionProvider>
   );
 }

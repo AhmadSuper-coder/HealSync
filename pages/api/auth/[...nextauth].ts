@@ -17,10 +17,11 @@ async function authenticateWithDjango(googleProfile: any) {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || "development-secret-key-replace-in-production",
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "mock_google_client_id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "mock_google_client_secret",
+      clientId: process.env.GOOGLE_CLIENT_ID || "mock_google_client_id_123456789.apps.googleusercontent.com",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "mock_google_client_secret_abcdef123456",
     }),
   ],
   callbacks: {

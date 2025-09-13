@@ -57,7 +57,10 @@ function mockDjangoResponse(endpoint: string, options: ApiRequestOptions) {
 
   return new Promise((resolve) => {
     setTimeout(() => {
-      switch (endpoint) {
+      // Handle endpoints with query parameters
+      const baseEndpoint = endpoint.split('?')[0];
+      
+      switch (baseEndpoint) {
         case "/patients/":
           resolve({
             ok: true,
