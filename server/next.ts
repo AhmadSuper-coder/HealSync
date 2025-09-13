@@ -20,12 +20,8 @@ export async function setupNext(app: Express, server: Server) {
 
   await nextApp.prepare();
 
-  // Handle all non-API routes with Next.js
-  app.all('*', (req, res, next) => {
-    // Skip API routes - they're handled by Express
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
+  // Handle all routes with Next.js (including API routes)
+  app.all('*', (req, res) => {
     return handle(req, res);
   });
 
@@ -38,10 +34,7 @@ export function serveStatic(app: Express) {
   const handle = nextApp.getRequestHandler();
   
   nextApp.prepare().then(() => {
-    app.all('*', (req, res, next) => {
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
+    app.all('*', (req, res) => {
       return handle(req, res);
     });
   });
