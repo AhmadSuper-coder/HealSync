@@ -29,6 +29,7 @@ import type { Announcement } from "@shared/schema";
 // Global Announcement Banner Component
 function AnnouncementBanner() {
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     const saved = localStorage.getItem('dismissedAnnouncements');
     return saved ? JSON.parse(saved) : [];
   });
@@ -52,7 +53,9 @@ function AnnouncementBanner() {
   const dismissAnnouncement = (announcementId: string) => {
     const newDismissed = [...dismissedAnnouncements, announcementId];
     setDismissedAnnouncements(newDismissed);
-    localStorage.setItem('dismissedAnnouncements', JSON.stringify(newDismissed));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dismissedAnnouncements', JSON.stringify(newDismissed));
+    }
   };
 
   if (!currentAnnouncement) return null;

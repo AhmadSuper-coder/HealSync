@@ -26,18 +26,24 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem(storageKey) as Theme;
+      return savedTheme || defaultTheme;
+    }
+    return defaultTheme;
+  });
 
   useEffect(() => {
-    // Initialize theme from localStorage on client side
+    // Sync theme from localStorage on client side
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem(storageKey) as Theme;
       if (savedTheme && savedTheme !== theme) {
         setTheme(savedTheme);
-        return;
       }
     }
-  }, [storageKey]);
+  }, [storageKey, theme]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

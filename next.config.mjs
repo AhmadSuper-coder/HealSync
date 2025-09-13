@@ -13,6 +13,18 @@ const nextConfig = {
       '@': path.resolve(__dirname, 'client/src'),
       '@shared': path.resolve(__dirname, 'shared'),
     };
+
+    // Fix "process is not defined" errors on client side
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        "process": "process/browser",
+        "path": false,
+        "fs": false,
+        "crypto": false,
+      };
+    }
+
     return config;
   },
 };
