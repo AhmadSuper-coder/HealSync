@@ -12,6 +12,7 @@ import { ArrowLeft, Edit, Phone, Mail, MapPin, Calendar, FileText, Image, Eye, P
 import { Link } from "wouter";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { BillingForm } from "@/components/BillingForm";
+import { FileUpload } from "@/components/FileUpload";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
@@ -29,18 +30,18 @@ export default function PatientDetails() {
   const patientId = params?.id;
 
   // Fetch patient data
-  const { data: patient, isLoading: isPatientLoading } = useQuery({
+  const { data: patient, isLoading: isPatientLoading } = useQuery<Patient>({
     queryKey: ['/api/patients', patientId],
     enabled: !!patientId,
   });
 
   // Fetch prescriptions and bills using useQuery for proper cache management
-  const { data: prescriptions = [], isLoading: isPrescriptionsLoading } = useQuery({
+  const { data: prescriptions = [], isLoading: isPrescriptionsLoading } = useQuery<Prescription[]>({
     queryKey: ['/api/prescriptions', patientId],
     enabled: !!patientId,
   });
 
-  const { data: bills = [], isLoading: isBillsLoading } = useQuery({
+  const { data: bills = [], isLoading: isBillsLoading } = useQuery<Bill[]>({
     queryKey: ['/api/bills', patientId],
     enabled: !!patientId,
   });
@@ -176,12 +177,6 @@ export default function PatientDetails() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/patients/${patient.id}/edit`}>
-            <Button variant="outline" data-testid="button-edit-patient">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Patient
-            </Button>
-          </Link>
           <Button onClick={sendPatientInfo} data-testid="button-send-patient-info">
             <Send className="mr-2 h-4 w-4" />
             Send Patient Info
@@ -240,7 +235,14 @@ export default function PatientDetails() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Contact Information</CardTitle>
+                  <Link href={`/patients/${patient.id}/edit`}>
+                    <Button variant="ghost" size="sm" data-testid="button-edit-contact-info">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -285,7 +287,14 @@ export default function PatientDetails() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Personal Details</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Personal Details</CardTitle>
+                  <Link href={`/patients/${patient.id}/edit`}>
+                    <Button variant="ghost" size="sm" data-testid="button-edit-personal-details">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -312,10 +321,17 @@ export default function PatientDetails() {
             {patient.allergies && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Known Allergies
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Known Allergies
+                    </CardTitle>
+                    <Link href={`/patients/${patient.id}/edit`}>
+                      <Button variant="ghost" size="sm" data-testid="button-edit-allergies">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="whitespace-pre-wrap">{patient.allergies}</p>
@@ -326,10 +342,17 @@ export default function PatientDetails() {
             {patient.medicalHistory && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Medical History
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Medical History
+                    </CardTitle>
+                    <Link href={`/patients/${patient.id}/edit`}>
+                      <Button variant="ghost" size="sm" data-testid="button-edit-medical-history">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="whitespace-pre-wrap">{patient.medicalHistory}</p>
@@ -340,7 +363,14 @@ export default function PatientDetails() {
             {patient.lifestyle && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Lifestyle Information</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Lifestyle Information</CardTitle>
+                    <Link href={`/patients/${patient.id}/edit`}>
+                      <Button variant="ghost" size="sm" data-testid="button-edit-lifestyle">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="whitespace-pre-wrap">{patient.lifestyle}</p>
@@ -365,37 +395,65 @@ export default function PatientDetails() {
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Prescription Images & Documents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {patient.prescriptionImages && patient.prescriptionImages.length > 0 ? (
+          {/* Existing Documents Display */}
+          {patient.prescriptionImages && patient.prescriptionImages.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Existing Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {patient.prescriptionImages.map((image, index) => (
-                    <div key={index} className="border rounded-lg p-4 hover-elevate cursor-pointer">
+                  {patient.prescriptionImages.map((image: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                       <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center">
                         <Image className="h-8 w-8 text-muted-foreground" />
                       </div>
-                      <p className="text-sm font-medium truncate">Prescription {index + 1}</p>
-                      <p className="text-xs text-muted-foreground">Uploaded document</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium truncate">Document {index + 1}</p>
+                          <p className="text-xs text-muted-foreground">Existing document</p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" data-testid={`button-view-document-${index}`}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" data-testid={`button-delete-document-${index}`}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No documents uploaded yet.</p>
-                  <Link href={`/patients/${patient.id}/edit`}>
-                    <Button variant="outline" className="mt-4">
-                      Upload Documents
-                    </Button>
-                  </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* File Upload Section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Upload New Documents
+                </CardTitle>
+                <div className="text-sm text-muted-foreground">
+                  Add medical reports, prescriptions, and other patient documents
                 </div>
-              )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <FileUpload 
+                patientId={patient.id}
+                onUpload={(files) => {
+                  console.log('Files uploaded for patient:', patient.id, files);
+                  // Note: Integration with backend patient document storage would go here
+                  // This maintains existing functionality while providing upload capability
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
