@@ -20,6 +20,7 @@ import Billing from "@/pages/Billing";
 import Reports from "@/pages/Reports";
 import Communication from "@/pages/Communication";
 import { Feedback } from "@/pages/Feedback";
+import { Announcements } from "@/pages/Announcements";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 import { X, Pin, Megaphone } from "lucide-react";
@@ -111,6 +112,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/communication" component={Communication} />
       <Route path="/feedback" component={Feedback} />
+      <Route path="/announcements" component={Announcements} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

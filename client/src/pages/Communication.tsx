@@ -27,9 +27,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MessageSquare, Send, Bell, Users, Phone, Mail, CheckCircle, Megaphone, PlusCircle, Edit2, Pin, UnPin, Clock, AlertCircle, Star } from "lucide-react";
+import { MessageSquare, Send, Bell, Users, Phone, Mail, CheckCircle, Edit2, Clock, AlertCircle, Star } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import type { Announcement } from "@shared/schema";
 
 // Communication channel pricing (in INR)
 const CHANNEL_PRICING = {
@@ -115,15 +114,6 @@ export default function Communication() {
     },
   });
 
-  // Fetch announcements
-  const { data: announcements = [] } = useQuery({
-    queryKey: ['/api/announcements'],
-    queryFn: async () => {
-      const response = await fetch('/api/announcements');
-      if (!response.ok) throw new Error('Failed to fetch announcements');
-      return response.json();
-    },
-  });
 
   // Calculate estimated cost
   const estimatedCost = recipientCount * CHANNEL_PRICING[selectedChannel].price;
@@ -216,7 +206,6 @@ export default function Communication() {
           <TabsTrigger value="send" data-testid="tab-send-message">Send Message</TabsTrigger>
           <TabsTrigger value="history" data-testid="tab-message-history">Message History</TabsTrigger>
           <TabsTrigger value="templates" data-testid="tab-message-templates">Templates</TabsTrigger>
-          <TabsTrigger value="announcements" data-testid="tab-announcements">Announcements</TabsTrigger>
         </TabsList>
 
         <TabsContent value="send" className="space-y-6">
@@ -503,51 +492,6 @@ export default function Communication() {
           </div>
         </TabsContent>
 
-        <TabsContent value="announcements" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Megaphone className="h-5 w-5" />
-                Global Announcements
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                System-wide updates and notifications for all clinics
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {announcements.length > 0 ? (
-                  announcements.map((announcement: Announcement) => (
-                    <div key={announcement.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`announcement-${announcement.id}`}>
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-2">
-                          {announcement.isPinned && <Pin className="h-4 w-4 text-orange-500" />}
-                          <Badge variant={
-                            announcement.category === 'feature' ? 'default' :
-                            announcement.category === 'pricing' ? 'destructive' :
-                            announcement.category === 'update' ? 'secondary' : 'outline'
-                          }>
-                            {announcement.category}
-                          </Badge>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(announcement.publishedAt || announcement.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h3 className="font-semibold mb-2">{announcement.title}</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{announcement.message}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No announcements yet.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
       </Tabs>
     </div>
