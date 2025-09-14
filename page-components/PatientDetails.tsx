@@ -352,9 +352,9 @@ export default function PatientDetails() {
         <TabsList>
           <TabsTrigger value="basic" data-testid="tab-basic-details">Basic Information</TabsTrigger>
           <TabsTrigger value="medical" data-testid="tab-medical-details">Medical History</TabsTrigger>
+          <TabsTrigger value="documents" data-testid="tab-patient-documents">Documents</TabsTrigger>
           <TabsTrigger value="prescriptions" data-testid="tab-prescriptions">Prescriptions</TabsTrigger>
           <TabsTrigger value="billing" data-testid="tab-billing">Billing</TabsTrigger>
-          <TabsTrigger value="documents" data-testid="tab-patient-documents">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">

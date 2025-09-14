@@ -31,7 +31,6 @@ export default function Patients() {
         <TabsList>
           <TabsTrigger value="list" data-testid="tab-patient-list">Patient List</TabsTrigger>
           <TabsTrigger value="register" data-testid="tab-register-patient">Register Patient</TabsTrigger>
-          <TabsTrigger value="files" data-testid="tab-patient-files">Patient Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
