@@ -10,9 +10,11 @@ import {
   MessageSquare,
   Heart,
   Megaphone,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { signOut } from "next-auth/react";
 
 import {
   Sidebar,
@@ -24,6 +26,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 // Menu items
@@ -121,6 +124,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
