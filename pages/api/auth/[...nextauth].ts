@@ -1,19 +1,37 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-// Mock Django API integration
+import { AuthAPI } from "../../../lib/django-api";
+
+// Django API integration for Google Authentication
 async function authenticateWithDjango(googleProfile: any) {
-  // This simulates calling Django backend at /auth/google/
-  // In real implementation, you would make actual API call to Django
-  console.log("Sending Google profile to Django:", googleProfile);
-  
-  // Mock Django response with JWT tokens
-  return {
-    access_token: "mock_django_access_token_" + Date.now(),
-    refresh_token: "mock_django_refresh_token_" + Date.now(),
-    doctor_id: "doc_" + googleProfile.sub,
-    expires_in: 3600, // 1 hour
-  };
+  try {
+    console.log("Authenticating with Django backend:", googleProfile.email);
+    
+    // Use the Django API service to authenticate
+    const response = await AuthAPI.googleAuth({
+      email: googleProfile.email,
+      name: googleProfile.name,
+      sub: googleProfile.sub,
+      picture: googleProfile.picture,
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      return {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        doctor_id: data.doctor_id,
+        expires_in: data.expires_in || 3600,
+      };
+    } else {
+      throw new Error(data.error || "Django authentication failed");
+    }
+  } catch (error) {
+    console.error("Django authentication error:", error);
+    throw error;
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -92,21 +110,22 @@ export const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    // Mock refresh token call to Django
-    console.log("Refreshing token with Django refresh token:", token.refreshToken);
+    console.log("Refreshing token with Django backend");
     
-    // Simulate Django refresh token response
-    const refreshedTokens = {
-      access_token: "refreshed_mock_django_access_token_" + Date.now(),
-      refresh_token: token.refreshToken, // Usually stays the same
-      expires_in: 3600,
-    };
+    // Use the Django API service to refresh token
+    const response = await AuthAPI.refreshToken(token.refreshToken);
+    const data = await response.json();
 
-    return {
-      ...token,
-      accessToken: refreshedTokens.access_token,
-      tokenExpires: Date.now() + (refreshedTokens.expires_in * 1000),
-    };
+    if (response.ok) {
+      return {
+        ...token,
+        accessToken: data.access_token,
+        tokenExpires: Date.now() + (data.expires_in * 1000),
+        error: undefined,
+      };
+    } else {
+      throw new Error(data.error || "Token refresh failed");
+    }
   } catch (error) {
     console.error("Error refreshing access token:", error);
     return {
