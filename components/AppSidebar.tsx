@@ -33,7 +33,7 @@ import {
 const items = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -106,7 +106,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
-                const isActive = location === item.url;
+                const isActive = location === item.url || (item.url === '/dashboard' && location === '/');
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild data-active={isActive}>

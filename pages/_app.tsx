@@ -35,8 +35,10 @@ function AnnouncementBanner() {
       if (!response.ok) throw new Error('Failed to fetch announcements');
       return response.json();
     },
-    refetchOnWindowFocus: false, // Disable automatic refetching to improve performance
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    retry: false, // Prevent wasted retry attempts since API doesn't exist yet
+    enabled: false, // Disable until API is implemented
   });
 
   // Find the most recent pinned or latest announcement that hasn't been dismissed
