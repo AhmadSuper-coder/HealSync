@@ -6,7 +6,25 @@ const __dirname = path.dirname(__filename);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false, // Temporarily disable for performance testing
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', 'lucide-react'],
+  },
+  // Fix cross-origin dev warnings
+  async headers() {
+    return [
+      {
+        source: '/_next/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,

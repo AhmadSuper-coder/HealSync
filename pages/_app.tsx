@@ -6,10 +6,14 @@ import { queryClient } from "@/lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import dynamic from "next/dynamic";
+
+// Dynamically import dashboard-only components to reduce shared bundle size
+const SidebarProvider = dynamic(() => import("@/components/ui/sidebar").then(mod => ({ default: mod.SidebarProvider })), { ssr: false });
+const SidebarTrigger = dynamic(() => import("@/components/ui/sidebar").then(mod => ({ default: mod.SidebarTrigger })), { ssr: false });
+const AppSidebar = dynamic(() => import("@/components/AppSidebar").then(mod => ({ default: mod.AppSidebar })), { ssr: false });
+const ThemeToggle = dynamic(() => import("@/components/ThemeToggle").then(mod => ({ default: mod.ThemeToggle })), { ssr: false });
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Pin, Megaphone } from "lucide-react";
@@ -31,7 +35,8 @@ function AnnouncementBanner() {
       if (!response.ok) throw new Error('Failed to fetch announcements');
       return response.json();
     },
-    refetchInterval: 60000, // Poll every minute for new announcements
+    refetchOnWindowFocus: false, // Disable automatic refetching to improve performance
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Find the most recent pinned or latest announcement that hasn't been dismissed
