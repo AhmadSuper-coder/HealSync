@@ -1,6 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { setupNext, serveStatic, log } from "./next";
+import dotenv from "dotenv";
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' });
 
 const app = express();
 app.use(express.json());
