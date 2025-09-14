@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OTPVerification } from "./OTPVerification";
 import { FileUpload } from "./FileUpload";
 import { Phone, User, FileImage, CheckCircle } from "lucide-react";
+import { AuthAPI, PatientAPI } from "@/lib/django-api";
 
 const mobileSchema = z.object({
   mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
@@ -87,15 +88,10 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
   const handleSendOTP = async (data: MobileFormData) => {
     setIsSendingOTP(true);
     try {
-      const response = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile: data.mobile }),
-      });
-
+      const response = await AuthAPI.sendOTP(data.mobile);
       const result = await response.json();
       
-      if (result.success) {
+      if (response.ok && result.success) {
         setVerifiedMobile(data.mobile);
         setStep("otp");
         toast({
@@ -136,16 +132,13 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
     try {
       const payload = {
         ...data,
+        age: Number(data.age), // Convert age string to number
         mobile: verifiedMobile || data.mobile,
       };
 
       if (isEditing) {
         // Update patient
-        const response = await fetch(`/api/patients/${initialData?.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        const response = await PatientAPI.update(Number(initialData?.id), payload);
         
         if (response.ok) {
           toast({
@@ -155,11 +148,7 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
         }
       } else {
         // Create new patient
-        const response = await fetch('/api/patients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        const response = await PatientAPI.create(payload);
         
         if (response.ok) {
           toast({

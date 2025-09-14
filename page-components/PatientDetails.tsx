@@ -13,8 +13,9 @@ import Link from "next/link";
 import { PrescriptionForm } from "@/components/PrescriptionForm";
 import { BillingForm } from "@/components/BillingForm";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
+import { PatientAPI, PrescriptionAPI, BillingAPI } from "@/lib/django-api";
 import type { Patient, Prescription, Bill, Medicine } from "@shared/schema";
 
 // Component for prescription status buttons
@@ -27,10 +28,10 @@ function PrescriptionStatusButton({ prescription, targetStatus, patientId }: {
   
   const updateStatusMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('PATCH', `/api/prescriptions/${prescription.id}`, { status: targetStatus });
+      return await PrescriptionAPI.update(prescription.id, { status: targetStatus });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['prescriptions', patientId] });
       toast({
         title: "Success",
         description: `Prescription marked as ${targetStatus}`
@@ -81,10 +82,10 @@ function BillingStatusButton({ bill, targetStatus, patientId }: {
         ? { status: targetStatus, paidAt: new Date().toISOString() }
         : { status: targetStatus };
       
-      return apiRequest('PATCH', `/api/bills/${bill.id}`, payload);
+      return await BillingAPI.update(bill.id, payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/bills', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['bills', patientId] });
       toast({
         title: "Success",
         description: `Bill marked as ${targetStatus}`
@@ -137,9 +138,9 @@ export default function PatientDetails() {
 
   // Fetch patient data
   const { data: patient, isLoading: isPatientLoading } = useQuery({
-    queryKey: ['/api/patients', patientId],
+    queryKey: ['patients', patientId],
     queryFn: async () => {
-      const response = await fetch(`/api/patients/${patientId}`);
+      const response = await PatientAPI.getById(Number(patientId));
       if (!response.ok) throw new Error('Failed to fetch patient');
       return response.json();
     },
@@ -148,21 +149,23 @@ export default function PatientDetails() {
 
   // Fetch prescriptions and bills using useQuery for proper cache management
   const { data: prescriptions = [], isLoading: isPrescriptionsLoading } = useQuery({
-    queryKey: ['/api/prescriptions', patientId],
+    queryKey: ['prescriptions', patientId],
     queryFn: async () => {
-      const response = await fetch(`/api/prescriptions?patientId=${patientId}`);
+      const response = await PrescriptionAPI.getAll({ patient_id: Number(patientId) });
       if (!response.ok) throw new Error('Failed to fetch prescriptions');
-      return response.json();
+      const data = await response.json();
+      return data.results || data;
     },
     enabled: !!patientId,
   });
 
   const { data: bills = [], isLoading: isBillsLoading } = useQuery({
-    queryKey: ['/api/bills', patientId],
+    queryKey: ['bills', patientId],
     queryFn: async () => {
-      const response = await fetch(`/api/bills?patientId=${patientId}`);
+      const response = await BillingAPI.getAll({ patient_id: Number(patientId) });
       if (!response.ok) throw new Error('Failed to fetch bills');
-      return response.json();
+      const data = await response.json();
+      return data.results || data;
     },
     enabled: !!patientId,
   });
@@ -189,11 +192,7 @@ export default function PatientDetails() {
         formData.append('patientPhone', patient.phone || '');
 
         // Send the request with PDF attached
-        const response = await fetch(`/api/patients/${patientId}/send-info`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include', // Include credentials like apiRequest does
-        });
+        const response = await PatientAPI.sendInfo(Number(patientId), formData);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

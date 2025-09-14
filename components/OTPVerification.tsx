@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Shield, ArrowLeft } from "lucide-react";
+import { AuthAPI } from "@/lib/django-api";
 
 interface OTPVerificationProps {
   mobile: string;
@@ -40,15 +41,10 @@ export function OTPVerification({ mobile, onVerificationSuccess, onBack, isLoadi
 
     setIsVerifying(true);
     try {
-      const response = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile, otp }),
-      });
-
+      const response = await AuthAPI.verifyOTP(mobile, otp);
       const data = await response.json();
       
-      if (data.success) {
+      if (response.ok && data.success) {
         toast({
           title: "OTP Verified",
           description: "Mobile number verified successfully!",
@@ -75,15 +71,10 @@ export function OTPVerification({ mobile, onVerificationSuccess, onBack, isLoadi
 
   const handleResendOTP = async () => {
     try {
-      const response = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile }),
-      });
-
+      const response = await AuthAPI.sendOTP(mobile);
       const data = await response.json();
       
-      if (data.success) {
+      if (response.ok && data.success) {
         toast({
           title: "OTP Sent",
           description: "A new OTP has been sent to your mobile number.",

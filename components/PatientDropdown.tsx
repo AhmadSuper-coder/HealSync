@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Check, ChevronsUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { PatientAPI } from "@/lib/django-api";
 import {
   Command,
   CommandEmpty,
@@ -49,9 +50,10 @@ export function PatientDropdown({
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('/api/patients');
+      const response = await PatientAPI.getAll({ limit: 100 });
       const data = await response.json();
-      setPatients(data);
+      // Handle Django API response format (results array)
+      setPatients(data.results || data);
     } catch (error) {
       console.error('Failed to fetch patients:', error);
     } finally {

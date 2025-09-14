@@ -3,15 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Megaphone, Pin } from "lucide-react";
 import type { Announcement } from "@shared/schema";
+import { AnnouncementAPI } from "@/lib/django-api";
 
 export function Announcements() {
   // Fetch announcements
   const { data: announcements = [] } = useQuery({
-    queryKey: ['/api/announcements'],
+    queryKey: ['announcements'],
     queryFn: async () => {
-      const response = await fetch('/api/announcements');
+      const response = await AnnouncementAPI.getAll();
       if (!response.ok) throw new Error('Failed to fetch announcements');
-      return response.json();
+      const data = await response.json();
+      // Handle Django API response format (results array)
+      return data.results || data;
     },
   });
 

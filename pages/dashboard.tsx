@@ -13,35 +13,37 @@ import {
   DollarSign,
   Activity
 } from "lucide-react";
-import djangoApiRequest from "@/lib/django-api";
+import { DashboardAPI } from "@/lib/django-api";
 
 export default function Dashboard() {
   const { data: session } = useSession();
 
   // Fetch dashboard statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/dashboard/stats/'],
+    queryKey: ['dashboard', 'stats'],
     queryFn: async () => {
-      const response = await djangoApiRequest('/dashboard/stats/') as any;
+      const response = await DashboardAPI.getStats();
       return await response.json();
     },
     enabled: !!session,
   });
 
   const { data: recentPatients, isLoading: patientsLoading } = useQuery({
-    queryKey: ['/patients/', 'recent'],
+    queryKey: ['dashboard', 'recent-patients'],
     queryFn: async () => {
-      const response = await djangoApiRequest('/patients/?limit=5') as any;
-      return await response.json();
+      const response = await DashboardAPI.getRecentPatients(5);
+      const data = await response.json();
+      return data.results || data;
     },
     enabled: !!session,
   });
 
   const { data: upcomingAppointments, isLoading: appointmentsLoading } = useQuery({
-    queryKey: ['/appointments/', 'today'],
+    queryKey: ['dashboard', 'today-appointments'],
     queryFn: async () => {
-      const response = await djangoApiRequest('/appointments/?today=true') as any;
-      return await response.json();
+      const response = await DashboardAPI.getTodayAppointments();
+      const data = await response.json();
+      return data.results || data;
     },
     enabled: !!session,
   });
