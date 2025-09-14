@@ -11,6 +11,7 @@ import {
   Heart,
   Megaphone,
   LogOut,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -65,6 +66,11 @@ const items = [
     title: "Communication",
     url: "/communication",
     icon: MessageSquare,
+  },
+  {
+    title: "WhatsApp",
+    url: "/whatsapp",
+    icon: MessageCircle,
   },
   {
     title: "Feedback",
