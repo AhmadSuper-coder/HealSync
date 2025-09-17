@@ -1,1 +1,9 @@
-import { AppointmentScheduler } from '../AppointmentScheduler';\n\nexport default function AppointmentSchedulerExample() {\n  return (\n    <AppointmentScheduler \n      onSubmit={(data) => console.log('Appointment scheduled:', data)}\n    />\n  );\n}\n
+import { AppointmentScheduler } from '../AppointmentScheduler';
+
+export default function AppointmentSchedulerExample() {
+  return (
+    <AppointmentScheduler 
+      onSubmit={(data) => console.log('Appointment scheduled:', data)}
+    />
+  );
+}

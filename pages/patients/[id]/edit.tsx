@@ -9,5 +9,5 @@ export default function EditPatientPage() {
     return <div>Loading...</div>;
   }
   
-  return <EditPatient id={id} />;
+  return <EditPatient />;
 }

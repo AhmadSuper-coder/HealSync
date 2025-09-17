@@ -48,8 +48,11 @@ const patientFormSchema = z.object({
 type MobileFormData = z.infer<typeof mobileSchema>;
 type PatientFormData = z.infer<typeof patientFormSchema>;
 
+// Type for the API payload with age as number
+type PatientPayload = Omit<PatientFormData, 'age'> & { age: number };
+
 interface PatientFormProps {
-  onSubmit?: (data: PatientFormData) => void;
+  onSubmit?: (data: PatientPayload) => void;
   initialData?: Partial<PatientFormData & { id?: string }>;
   isEditing?: boolean;
 }

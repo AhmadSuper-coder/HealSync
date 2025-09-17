@@ -9,5 +9,5 @@ export default function PatientDetailsPage() {
     return <div>Loading...</div>;
   }
   
-  return <PatientDetails id={id} />;
+  return <PatientDetails />;
 }

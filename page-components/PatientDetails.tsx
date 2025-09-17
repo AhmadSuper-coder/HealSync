@@ -16,7 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
 import { PatientAPI, PrescriptionAPI, BillingAPI } from "@/lib/django-api";
-import type { Patient, Prescription, Bill, Medicine } from "@shared/schema";
+import type { Patient, Prescription as BasePrescription, Bill, Medicine } from "@shared/schema";
+
+// Extend the Prescription type to properly type the medicines field
+type Prescription = Omit<BasePrescription, 'medicines'> & {
+  medicines: Medicine[];
+};
 
 // Component for prescription status buttons
 function PrescriptionStatusButton({ prescription, targetStatus, patientId }: {
@@ -28,7 +33,7 @@ function PrescriptionStatusButton({ prescription, targetStatus, patientId }: {
   
   const updateStatusMutation = useMutation({
     mutationFn: async () => {
-      return await PrescriptionAPI.update(prescription.id, { status: targetStatus });
+      return await PrescriptionAPI.update(Number(prescription.id), { status: targetStatus });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prescriptions', patientId] });
@@ -82,7 +87,7 @@ function BillingStatusButton({ bill, targetStatus, patientId }: {
         ? { status: targetStatus, paidAt: new Date().toISOString() }
         : { status: targetStatus };
       
-      return await BillingAPI.update(bill.id, payload);
+      return await BillingAPI.update(Number(bill.id), payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bills', patientId] });
@@ -124,7 +129,8 @@ function BillingStatusButton({ bill, targetStatus, patientId }: {
 
 export default function PatientDetails() {
   const router = useRouter();
-  const { id: patientId } = router.query;
+  const { id } = router.query;
+  const patientId = typeof id === 'string' ? id : Array.isArray(id) ? id[0] : '';
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [showAddPrescription, setShowAddPrescription] = useState(false);
@@ -761,7 +767,7 @@ export default function PatientDetails() {
                     <Card className="p-4" data-testid="metric-active-prescriptions">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-green-600">
-                          {prescriptions.filter(p => p.status === 'active').length}
+                          {prescriptions.filter((p: Prescription) => p.status === 'active').length}
                         </p>
                         <p className="text-sm text-muted-foreground">Active Prescriptions</p>
                       </div>
@@ -769,14 +775,14 @@ export default function PatientDetails() {
                     <Card className="p-4" data-testid="metric-completed-prescriptions">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-600">
-                          {prescriptions.filter(p => p.status === 'completed').length}
+                          {prescriptions.filter((p: Prescription) => p.status === 'completed').length}
                         </p>
                         <p className="text-sm text-muted-foreground">Completed Prescriptions</p>
                       </div>
                     </Card>
                   </div>
                   <div className="space-y-3">
-                    {prescriptions.map((prescription) => (
+                    {prescriptions.map((prescription: Prescription) => (
                       <div key={prescription.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`row-prescription-${prescription.id}`}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -785,7 +791,7 @@ export default function PatientDetails() {
                                 {prescription.status}
                               </Badge>
                               <span className="text-sm text-muted-foreground">
-                                {new Date(prescription.createdAt).toLocaleDateString()}
+                                {prescription.createdAt ? new Date(prescription.createdAt).toLocaleDateString() : 'Unknown'}
                               </span>
                             </div>
                             <p className="font-medium mb-1">
@@ -797,7 +803,7 @@ export default function PatientDetails() {
                             </p>
                             {prescription.followUpDate && (
                               <p className="text-sm text-blue-600 mt-1">
-                                Follow-up: {new Date(prescription.followUpDate).toLocaleDateString()}
+                                Follow-up: {prescription.followUpDate ? new Date(prescription.followUpDate).toLocaleDateString() : 'Not set'}
                               </p>
                             )}
                           </div>
@@ -822,7 +828,7 @@ export default function PatientDetails() {
                                   </div>
                                   <div>
                                     <p className="font-medium">Date</p>
-                                    <p>{new Date(prescription.createdAt).toLocaleDateString()}</p>
+                                    <p>{prescription.createdAt ? new Date(prescription.createdAt).toLocaleDateString() : 'Unknown'}</p>
                                   </div>
                                 </div>
                                 <div>
@@ -837,7 +843,7 @@ export default function PatientDetails() {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {prescription.medicines.map((medicine: any, index: number) => (
+                                      {prescription.medicines.map((medicine: Medicine, index: number) => (
                                         <TableRow key={index}>
                                           <TableCell>{medicine.name}</TableCell>
                                           <TableCell>{medicine.dosage}</TableCell>
@@ -857,7 +863,7 @@ export default function PatientDetails() {
                                 {prescription.followUpDate && (
                                   <div>
                                     <p className="font-medium">Follow-up Date</p>
-                                    <p className="text-sm">{new Date(prescription.followUpDate).toLocaleDateString()}</p>
+                                    <p className="text-sm">{prescription.followUpDate ? new Date(prescription.followUpDate).toLocaleDateString() : 'Not set'}</p>
                                   </div>
                                 )}
                               </div>
@@ -875,7 +881,6 @@ export default function PatientDetails() {
                                 </DialogHeader>
                                 <PrescriptionForm 
                                   preselectedPatientId={patient?.id}
-                                  editingPrescription={prescription}
                                   onSubmit={() => {
                                     queryClient.invalidateQueries({ queryKey: ['/api/prescriptions', patientId] });
                                   }}
@@ -971,7 +976,7 @@ export default function PatientDetails() {
                     <Card className="p-4" data-testid="metric-pending-bills">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-orange-600">
-                          {bills.filter(b => b.status === 'pending').length}
+                          {bills.filter((b: Bill) => b.status === 'pending').length}
                         </p>
                         <p className="text-sm text-muted-foreground">Pending Bills</p>
                       </div>
@@ -979,7 +984,7 @@ export default function PatientDetails() {
                     <Card className="p-4" data-testid="metric-paid-bills">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-green-600">
-                          {bills.filter(b => b.status === 'paid').length}
+                          {bills.filter((b: Bill) => b.status === 'paid').length}
                         </p>
                         <p className="text-sm text-muted-foreground">Paid Bills</p>
                       </div>
@@ -987,14 +992,14 @@ export default function PatientDetails() {
                     <Card className="p-4" data-testid="metric-total-paid">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-red-600">
-                          ₹{(bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0) / 100).toLocaleString()}
+                          ₹{(bills.filter((b: Bill) => b.status === 'paid').reduce((sum: number, b: Bill) => sum + b.amount, 0) / 100).toLocaleString()}
                         </p>
                         <p className="text-sm text-muted-foreground">Total Paid</p>
                       </div>
                     </Card>
                   </div>
                   <div className="space-y-3">
-                    {bills.map((bill) => (
+                    {bills.map((bill: Bill) => (
                       <div key={bill.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" data-testid={`row-bill-${bill.id}`}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
@@ -1006,7 +1011,7 @@ export default function PatientDetails() {
                                 {bill.status}
                               </Badge>
                               <span className="text-sm text-muted-foreground">
-                                {new Date(bill.createdAt).toLocaleDateString()}
+                                {bill.createdAt ? new Date(bill.createdAt).toLocaleDateString() : 'Unknown'}
                               </span>
                             </div>
                             <p className="font-medium mb-1">₹{(bill.amount / 100).toLocaleString()}</p>
@@ -1045,12 +1050,12 @@ export default function PatientDetails() {
                                     </div>
                                     <div>
                                       <p className="font-medium">Created</p>
-                                      <p>{new Date(bill.createdAt).toLocaleDateString()}</p>
+                                      <p>{bill.createdAt ? new Date(bill.createdAt).toLocaleDateString() : 'Unknown'}</p>
                                     </div>
                                     {bill.paidAt && (
                                       <div>
                                         <p className="font-medium">Paid</p>
-                                        <p>{new Date(bill.paidAt).toLocaleDateString()}</p>
+                                        <p>{bill.paidAt ? new Date(bill.paidAt).toLocaleDateString() : 'Not paid'}</p>
                                       </div>
                                     )}
                                   </div>
@@ -1079,7 +1084,6 @@ export default function PatientDetails() {
                                 </DialogHeader>
                                 <BillingForm 
                                   preselectedPatientId={patient?.id}
-                                  editingBill={bill}
                                   isEditing={true}
                                   onSubmit={() => {
                                     queryClient.invalidateQueries({ queryKey: ['/api/bills', patientId] });

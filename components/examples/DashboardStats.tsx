@@ -1,1 +1,5 @@
-import { DashboardStats } from '../DashboardStats';\n\nexport default function DashboardStatsExample() {\n  return <DashboardStats />;\n}\n
+import { DashboardStats } from '../DashboardStats';
+
+export default function DashboardStatsExample() {
+  return <DashboardStats />;
+}

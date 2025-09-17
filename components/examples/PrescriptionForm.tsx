@@ -1,1 +1,9 @@
-import { PrescriptionForm } from '../PrescriptionForm';\n\nexport default function PrescriptionFormExample() {\n  return (\n    <PrescriptionForm \n      onSubmit={(data) => console.log('Prescription created:', data)}\n    />\n  );\n}\n
+import { PrescriptionForm } from '../PrescriptionForm';
+
+export default function PrescriptionFormExample() {
+  return (
+    <PrescriptionForm 
+      onSubmit={(data) => console.log('Prescription created:', data)}
+    />
+  );
+}

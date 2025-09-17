@@ -1,1 +1,5 @@
-import { AppointmentCalendar } from '../AppointmentCalendar';\n\nexport default function AppointmentCalendarExample() {\n  return <AppointmentCalendar />;\n}\n
+import { AppointmentCalendar } from '../AppointmentCalendar';
+
+export default function AppointmentCalendarExample() {
+  return <AppointmentCalendar />;
+}

@@ -1,1 +1,5 @@
-import { PatientList } from '../PatientList';\n\nexport default function PatientListExample() {\n  return <PatientList />;\n}\n
+import { PatientList } from '../PatientList';
+
+export default function PatientListExample() {
+  return <PatientList />;
+}
