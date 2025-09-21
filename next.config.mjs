@@ -10,15 +10,23 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', 'lucide-react'],
   },
-  // Fix cross-origin dev warnings
+  // Allow all hosts for Replit proxy
   async headers() {
     return [
       {
-        source: '/_next/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
             value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
           },
         ],
       },
