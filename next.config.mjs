@@ -10,6 +10,14 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['@radix-ui/react-accordion', '@radix-ui/react-dialog', 'lucide-react'],
   },
+  // Allow all dev origins for Replit proxy
+  allowedDevOrigins: [
+    '*.replit.dev',
+    '*.repl.co', 
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+  ],
   // Allow all hosts for Replit proxy
   async headers() {
     return [
