@@ -12,15 +12,14 @@ const nextConfig = {
   },
   // Allow all dev origins for Replit proxy
   allowedDevOrigins: [
-    '*.replit.dev',
-    '*.repl.co', 
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-    "https://dash.jsonformatters.online",
-    "dash.jsonformatters.online"
-
+    "*.replit.dev",
+    "*.repl.co",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://dash.jsonformatters.online",
+    "https://dash.jsonformatters.online"
   ],
+
   // Allow all hosts for Replit proxy
   async headers() {
     return [
