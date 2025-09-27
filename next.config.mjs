@@ -17,6 +17,8 @@ const nextConfig = {
     'localhost',
     '127.0.0.1',
     '0.0.0.0',
+    "http://dash.jsonformatters.online",
+
   ],
   // Allow all hosts for Replit proxy
   async headers() {
