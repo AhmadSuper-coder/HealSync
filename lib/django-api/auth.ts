@@ -26,6 +26,24 @@ export interface RefreshResponse {
   access_token: string;
 }
 
+export interface OAuthLoginRequest {
+  email: string;
+  name: string;
+  sub: string;
+  picture?: string;
+}
+
+export interface OAuthLoginResponse {
+  access: string;
+  refresh: string;
+  created: boolean;
+  user: {
+    email: string;
+    full_name: string;
+    sub_id: string | null;
+  };
+}
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -91,5 +109,38 @@ export const AuthAPI = {
     new_password: string;
   }): Promise<{ message: string }> {
     return await apiClient.post('/auth/reset-password/', data);
+  },
+
+  /**
+   * OAuth login with Google profile data
+   */
+  async googleAuth(profileData: OAuthLoginRequest): Promise<Response> {
+    // Use the real OAuth login API endpoint
+    const response = await fetch('https://backend.jsonformatters.online/api/accounts/oauth-login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+    
+    return response;
+  },
+
+  /**
+   * Refresh token using the OAuth API
+   */
+  async refreshToken(refreshToken: string): Promise<Response> {
+    const response = await fetch('https://backend.jsonformatters.online/api/accounts/refresh-token/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        refresh: refreshToken,
+      }),
+    });
+    
+    return response;
   },
 };

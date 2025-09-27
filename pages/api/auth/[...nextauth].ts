@@ -3,12 +3,12 @@ import GoogleProvider from "next-auth/providers/google";
 
 import { AuthAPI } from "../../../lib/django-api";
 
-// Django API integration for Google Authentication
+// OAuth API integration for Google Authentication
 async function authenticateWithDjango(googleProfile: any) {
   try {
-    console.log("Authenticating with Django backend:", googleProfile.email);
+    console.log("Authenticating with OAuth backend:", googleProfile.email);
     
-    // Use the Django API service to authenticate
+    // Use the real OAuth API service to authenticate
     const response = await AuthAPI.googleAuth({
       email: googleProfile.email,
       name: googleProfile.name,
@@ -20,16 +20,17 @@ async function authenticateWithDjango(googleProfile: any) {
     
     if (response.ok) {
       return {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        doctor_id: data.doctor_id,
-        expires_in: data.expires_in || 3600,
+        access_token: data.access,
+        refresh_token: data.refresh,
+        user_data: data.user,
+        created: data.created,
+        expires_in: 3600, // Default to 1 hour
       };
     } else {
-      throw new Error(data.error || "Django authentication failed");
+      throw new Error(data.error || "OAuth authentication failed");
     }
   } catch (error) {
-    console.error("Django authentication error:", error);
+    console.error("OAuth authentication error:", error);
     throw error;
   }
 }
@@ -46,17 +47,19 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          // Send Google profile to Django backend
+          // Send Google profile to OAuth backend
           const djangoResponse = await authenticateWithDjango({
             email: user.email,
             name: user.name,
             sub: account.providerAccountId,
+            picture: profile?.image,
           });
           
-          // Store Django tokens in user object
+          // Store OAuth tokens in user object
           user.accessToken = djangoResponse.access_token;
           user.refreshToken = djangoResponse.refresh_token;
-          user.doctorId = djangoResponse.doctor_id;
+          user.userData = djangoResponse.user_data;
+          user.created = djangoResponse.created;
           user.tokenExpires = Date.now() + (djangoResponse.expires_in * 1000);
           
           return true;
@@ -74,7 +77,8 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          doctorId: user.doctorId,
+          userData: user.userData,
+          created: user.created,
           tokenExpires: user.tokenExpires,
         };
       }
@@ -89,7 +93,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
-      session.doctorId = token.doctorId;
+      session.userData = token.userData;
+      session.created = token.created;
       session.error = token.error;
       return session;
     },
@@ -110,17 +115,17 @@ export const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    console.log("Refreshing token with Django backend");
+    console.log("Refreshing token with OAuth backend");
     
-    // Use the Django API service to refresh token
+    // Use the OAuth API service to refresh token
     const response = await AuthAPI.refreshToken(token.refreshToken);
     const data = await response.json();
 
     if (response.ok) {
       return {
         ...token,
-        accessToken: data.access_token,
-        tokenExpires: Date.now() + (data.expires_in * 1000),
+        accessToken: data.access,
+        tokenExpires: Date.now() + (3600 * 1000), // Default to 1 hour
         error: undefined,
       };
     } else {
