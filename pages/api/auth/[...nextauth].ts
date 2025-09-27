@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 import { AuthAPI } from "../../../lib/django-api/auth";
-import { GoogleProfile } from "../../../types/auth";
+import { GoogleProfile, RefreshRequest } from "../../../types/auth";
 
 
 
@@ -32,10 +32,6 @@ export const authOptions: NextAuthOptions = {
 
         // ✅ Call Django API
         const djangoResponse = await AuthAPI.googleAuth(googleProfile);
-
-        console.log("Django authentication successful:", djangoResponse);
-
-
           
           console.log("Django authentication successful:", djangoResponse);
 
@@ -59,7 +55,6 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          doctorId: user.doctorId,
           tokenExpires: user.tokenExpires,
         };
       }
@@ -74,7 +69,6 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
-      session.doctorId = token.doctorId;
       session.error = token.error;
       return session;
     },
@@ -97,20 +91,18 @@ async function refreshAccessToken(token: any) {
   try {
     console.log("Refreshing token with Django backend");
     
+    const refresh_request: RefreshRequest = { refresh: token.refreshToken };
     // Use the Django API service to refresh token
-    const response = await AuthAPI.refreshToken(token.refreshToken);
-    const data = await response.json();
+    const response = await AuthAPI.refreshToken(refresh_request);
 
-    if (response.ok) {
-      return {
-        ...token,
-        accessToken: data.access_token,
-        tokenExpires: Date.now() + (data.expires_in * 1000),
-        error: undefined,
-      };
-    } else {
-      throw new Error(data.error || "Token refresh failed");
-    }
+    console.log("Token refreshed successfully:", response);
+
+    return {
+      ...token,
+      accessToken: response.access,
+      refreshToken: response.refresh ?? token.refreshToken, // Fall back to old refresh token
+      tokenExpires: Date.now() + 30 * 60 * 1000, // Assume new token expires in 30 minutes
+    };
   } catch (error) {
     console.error("Error refreshing access token:", error);
     return {

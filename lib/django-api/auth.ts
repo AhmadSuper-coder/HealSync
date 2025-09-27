@@ -1,5 +1,5 @@
 import { apiClient, post, get } from './client';
-import { DjangoAuthResponse, GoogleProfile } from "../../types/auth";
+import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse} from "../../types/auth";
 
 
 // Auth-related types
@@ -20,13 +20,7 @@ export interface LoginResponse {
   };
 }
 
-export interface RefreshRequest {
-  refresh_token: string;
-}
 
-export interface RefreshResponse {
-  access_token: string;
-}
 
 export interface UserProfile {
   id: string;
@@ -65,8 +59,8 @@ export const AuthAPI = {
   /**
    * Refresh access token
    */
-  async refresh(refreshData: RefreshRequest): Promise<RefreshResponse> {
-    return await apiClient.post('/auth/refresh/', refreshData);
+  async refreshToken(data: RefreshRequest): Promise<RefreshResponse> {
+    return await post<RefreshResponse, RefreshRequest>('api/auth/token/refresh/', data); 
   },
 
   /**

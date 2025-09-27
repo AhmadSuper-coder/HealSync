@@ -17,3 +17,15 @@ export interface DjangoAuthResponse {
     sub_id: string | null;
   };
 }
+
+
+export interface RefreshRequest {
+  refresh: string;
+}
+
+
+
+export interface RefreshResponse {
+  access: string;
+  refresh: string;
+}
