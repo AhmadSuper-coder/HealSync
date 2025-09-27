@@ -1,4 +1,6 @@
-import { apiClient } from './client';
+import { apiClient, post, get } from './client';
+import { DjangoAuthResponse, GoogleProfile } from "../../types/auth";
+
 
 // Auth-related types
 export interface LoginRequest {
@@ -38,6 +40,21 @@ export interface UserProfile {
 
 // Auth API methods
 export const AuthAPI = {
+
+  /**
+   * google Oauth authentication
+   */
+  // async googleAuth(data: { email: string; name: string; sub: string; picture?: string }) {
+  //   return await apiClient.post('api/accounts/oauth-login/', data);
+  // },
+
+  async googleAuth(data: GoogleProfile): Promise<DjangoAuthResponse> {
+    return await post<DjangoAuthResponse, GoogleProfile>(
+      "api/accounts/oauth-login/",
+      data
+    );
+  },
+
   /**
    * Login with username/password
    */

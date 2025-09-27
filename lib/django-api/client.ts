@@ -10,6 +10,9 @@ interface DjangoError {
   log_id: string;
 }
 
+// ✅ Generic response type
+type ApiResponse<T> = Promise<T>;
+
 // Create axios instance with base configuration
 const createApiClient = (): AxiosInstance => {
   const baseURL = process.env.NEXT_PUBLIC_DJANGO_API || 'http://localhost:8000/api';
@@ -35,19 +38,16 @@ const createApiClient = (): AxiosInstance => {
       }
       return config;
     },
-    (error) => {
-      return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
   );
 
   // Response interceptor to handle Django errors
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      // Return only response.data on success
-      return response.data;
+      // ✅ Return typed response
+      return response;
     },
     async (error: AxiosError) => {
-      // Handle network errors
       if (!error.response) {
         const message = 'Network error. Please check your connection.';
         toast({
@@ -60,39 +60,30 @@ const createApiClient = (): AxiosInstance => {
 
       const { status, data } = error.response;
 
-      // Handle 401 - Session expired (ALWAYS, regardless of response format)
       if (status === 401) {
         toast({
           title: 'Session Expired',
           description: 'Session expired',
           variant: 'destructive',
         });
-        
-        // Auto sign out
+
         try {
           await signOut({ redirect: false });
         } catch (signOutError) {
           console.error('Error signing out:', signOutError);
         }
-        
+
         return Promise.reject(new Error('Session expired'));
       }
 
-      // Handle Django error format
       if (data && typeof data === 'object' && 'error_message' in data) {
         const djangoError = data as DjangoError;
-        
-        // Log error details for debugging
         console.error('Django API Error:', {
-          app_code: djangoError.app_code,
-          error_code: djangoError.error_code,
-          error_message: djangoError.error_message,
-          log_id: djangoError.log_id,
+          ...djangoError,
           status,
           endpoint: error.config?.url,
         });
 
-        // Show error message to user
         toast({
           title: 'Error',
           description: djangoError.error_message,
@@ -102,7 +93,6 @@ const createApiClient = (): AxiosInstance => {
         return Promise.reject(new Error(djangoError.error_message));
       }
 
-      // Handle non-Django error responses
       let message = 'An error occurred';
       switch (status) {
         case 400:
@@ -137,5 +127,27 @@ const createApiClient = (): AxiosInstance => {
 // Export singleton instance
 export const apiClient = createApiClient();
 
+// ✅ Helper functions with generics
+export const get = async <T>(url: string, config?: object): ApiResponse<T> => {
+  const res = await apiClient.get<T>(url, config);
+  return res.data;
+};
+
+export const post = async <T, B = unknown>(url: string, body: B, config?: object): ApiResponse<T> => {
+  const res = await apiClient.post<T, any>(url, body, config);
+  return res.data;
+};
+
+
+export const put = async <T, B = unknown>(url: string, body: B, config?: object): ApiResponse<T> => {
+  const res = await apiClient.put<T>(url, body, config);
+  return res.data;
+};
+
+export const del = async <T>(url: string, config?: object): ApiResponse<T> => {
+  const res = await apiClient.delete<T>(url, config);
+  return res.data;
+};
+
 // Export types for use in other modules
-export type { DjangoError };
+export type { DjangoError, ApiResponse };

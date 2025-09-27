@@ -1,38 +1,10 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-import { AuthAPI } from "../../../lib/django-api";
+import { AuthAPI } from "../../../lib/django-api/auth";
+import { GoogleProfile } from "../../../types/auth";
 
-// Django API integration for Google Authentication
-async function authenticateWithDjango(googleProfile: any) {
-  try {
-    console.log("Authenticating with Django backend:", googleProfile.email);
-    
-    // Use the Django API service to authenticate
-    const response = await AuthAPI.googleAuth({
-      email: googleProfile.email,
-      name: googleProfile.name,
-      sub: googleProfile.sub,
-      picture: googleProfile.picture,
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      return {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        doctor_id: data.doctor_id,
-        expires_in: data.expires_in || 3600,
-      };
-    } else {
-      throw new Error(data.error || "Django authentication failed");
-    }
-  } catch (error) {
-    console.error("Django authentication error:", error);
-    throw error;
-  }
-}
+
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -46,18 +18,31 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          // Send Google profile to Django backend
-          const djangoResponse = await authenticateWithDjango({
-            email: user.email,
-            name: user.name,
-            sub: account.providerAccountId,
-          });
+
+          console.log("Google sign-in for:", user.email);
+          console.log("Google profile:", profile);
+
+        // ✅ Prepare Google profile for Django
+        const googleProfile: GoogleProfile = {
+          email: user.email!,
+          name: user.name!,
+          sub: account.providerAccountId,
+          picture: user.image ?? undefined,
+        };
+
+        // ✅ Call Django API
+        const djangoResponse = await AuthAPI.googleAuth(googleProfile);
+
+        console.log("Django authentication successful:", djangoResponse);
+
+
           
-          // Store Django tokens in user object
+          console.log("Django authentication successful:", djangoResponse);
+
+          // ✅ Attach tokens to NextAuth `user` object
           user.accessToken = djangoResponse.access_token;
           user.refreshToken = djangoResponse.refresh_token;
-          user.doctorId = djangoResponse.doctor_id;
-          user.tokenExpires = Date.now() + (djangoResponse.expires_in * 1000);
+          user.tokenExpires = Date.now() + djangoResponse.expires_in * 1000;
           
           return true;
         } catch (error) {
