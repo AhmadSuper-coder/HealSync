@@ -11,8 +11,6 @@ export type {
   // Auth types
   LoginRequest,
   LoginResponse,
-  RefreshRequest,
-  RefreshResponse,
   UserProfile,
 } from './auth';
 

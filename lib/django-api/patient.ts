@@ -1,21 +1,5 @@
 import { apiClient } from './client';
 
-// Patient-related types
-export interface Patient {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  age: number;
-  date_of_birth: string;
-  address: string;
-  emergency_contact: string;
-  medical_history: string;
-  condition: string;
-  last_visit: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface CreatePatientRequest {
   name: string;
@@ -33,12 +17,6 @@ export interface UpdatePatientRequest extends Partial<CreatePatientRequest> {
   id: number;
 }
 
-export interface PatientListResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Patient[];
-}
 
 export interface PatientListParams {
   page?: number;
