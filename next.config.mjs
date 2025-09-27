@@ -17,7 +17,7 @@ const nextConfig = {
     'localhost',
     '127.0.0.1',
     '0.0.0.0',
-    "http://dash.jsonformatters.online",
+    "https://dash.jsonformatters.online",
     "dash.jsonformatters.online"
 
   ],
