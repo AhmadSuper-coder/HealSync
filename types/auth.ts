@@ -29,3 +29,25 @@ export interface RefreshResponse {
   access: string;
   refresh: string;
 }
+
+export interface EmailLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface EmailSignupRequest {
+  email: string;
+  password: string;
+  full_name: string;
+}
+
+export interface AuthResponse {
+  access: string;
+  refresh: string;
+  created?: boolean;
+  user: {
+    email: string;
+    full_name: string;
+    sub_id?: string | null;
+  };
+}

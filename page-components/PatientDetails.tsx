@@ -18,6 +18,12 @@ import { downloadPatientPDF, getPatientPDFBlob } from "@/lib/pdfGenerator";
 import { PatientAPI, PrescriptionAPI, BillingAPI } from "@/lib/django-api";
 import type { Patient, Prescription as BasePrescription, Bill, Medicine } from "@shared/schema";
 
+// Import refactored components
+import { PatientProfileCard } from "@/components/PatientProfileCard";
+import { ContactInfoSection } from "@/components/ContactInfoSection";
+import { PersonalDetailsSection } from "@/components/PersonalDetailsSection";
+import { MedicalInfoSection } from "@/components/MedicalInfoSection";
+
 // Extend the Prescription type to properly type the medicines field
 type Prescription = Omit<BasePrescription, 'medicines'> & {
   medicines: Medicine[];
@@ -321,37 +327,7 @@ export default function PatientDetails() {
       </div>
 
       {/* Patient Profile Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-lg font-semibold">
-                {getInitials(patient.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">{patient.name}</h1>
-                <Badge variant="outline" className="text-sm">
-                  {patient.age} years • {patient.gender}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  <span>{patient.phone}</span>
-                </div>
-                {patient.email && (
-                  <div className="flex items-center gap-1">
-                    <Mail className="h-4 w-4" />
-                    <span>{patient.email}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      <PatientProfileCard patient={patient} />
 
       {/* Patient Details Tabs */}
       <Tabs defaultValue="basic" className="space-y-6">
@@ -365,152 +341,14 @@ export default function PatientDetails() {
 
         <TabsContent value="basic" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone Number</p>
-                    <p className="font-medium">{patient.phone}</p>
-                  </div>
-                </div>
-                
-                {patient.email && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{patient.email}</p>
-                    </div>
-                  </div>
-                )}
+            <ContactInfoSection patient={patient} />
 
-                {patient.emergencyContact && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Emergency Contact</p>
-                      <p className="font-medium">{patient.emergencyContact}</p>
-                    </div>
-                  </div>
-                )}
-
-                {patient.address && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Address</p>
-                      <p className="font-medium">{patient.address}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Personal Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Age</p>
-                  <p className="font-medium">{patient.age} years</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground">Gender</p>
-                  <p className="font-medium">{patient.gender}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Registration Date</p>
-                  <p className="font-medium">January 15, 2024</p>
-                </div>
-              </CardContent>
-            </Card>
+            <PersonalDetailsSection patient={patient} />
           </div>
         </TabsContent>
 
         <TabsContent value="medical" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            {/* Known Allergies Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Known Allergies
-                  </CardTitle>
-                  <Link href={`/patients/${patient?.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {patient?.allergies ? (
-                  <p className="whitespace-pre-wrap">{patient.allergies}</p>
-                ) : (
-                  <p className="text-muted-foreground italic">No known allergies recorded</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Medical History Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Medical History
-                  </CardTitle>
-                  <Link href={`/patients/${patient?.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {patient?.medicalHistory ? (
-                  <p className="whitespace-pre-wrap">{patient.medicalHistory}</p>
-                ) : (
-                  <p className="text-muted-foreground italic">No medical history recorded</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Lifestyle Information Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Lifestyle Information
-                  </CardTitle>
-                  <Link href={`/patients/${patient?.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {patient?.lifestyle ? (
-                  <p className="whitespace-pre-wrap">{patient.lifestyle}</p>
-                ) : (
-                  <p className="text-muted-foreground italic">No lifestyle information recorded</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <MedicalInfoSection patient={patient} />
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-6">

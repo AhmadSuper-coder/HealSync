@@ -1,5 +1,5 @@
 import { apiClient, post, get } from './client';
-import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse} from "@/types/auth.ts";
+import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse, EmailLoginRequest, EmailSignupRequest, AuthResponse} from "@/types/auth.ts";
 
 
 
@@ -66,4 +66,31 @@ export const AuthAPI = {
 
 
 
+  /**
+   * Email/password login
+   */
+  async emailLogin(credentials: EmailLoginRequest): Promise<AuthResponse> {
+    return await post<AuthResponse, EmailLoginRequest>(
+      "api/accounts/login/",
+      credentials
+    );
+  },
+
+  /**
+   * Email signup with full name
+   */
+  async emailSignup(userData: EmailSignupRequest): Promise<AuthResponse> {
+    return await post<AuthResponse, EmailSignupRequest>(
+      "api/accounts/signup/",
+      userData
+    );
+  },
+
+  /**
+   * Validate email format
+   */
+  validateEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
 };

@@ -1,5 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 import { AuthAPI } from "../../../lib/django-api/auth";
 import { GoogleProfile, RefreshRequest } from "../../../types/auth";
@@ -13,38 +14,82 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    CredentialsProvider({
+      id: "email-password",
+      name: "Email and Password",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "user@example.com" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
+
+        // Validate email format
+        if (!AuthAPI.validateEmail(credentials.email)) {
+          throw new Error("Invalid email format");
+        }
+
+        try {
+          const response = await AuthAPI.emailLogin({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          return {
+            id: response.user.email,
+            email: response.user.email,
+            name: response.user.full_name,
+            accessToken: response.access,
+            refreshToken: response.refresh,
+            tokenExpires: Date.now() + (3600 * 1000), // 1 hour
+            userData: response.user,
+            created: response.created,
+          };
+        } catch (error) {
+          console.error("Email login failed:", error);
+          throw new Error("Invalid email or password");
+        }
+      },
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-
           console.log("Google sign-in for:", user.email);
           console.log("Google profile:", profile);
 
-        // ✅ Prepare Google profile for Django
-        const googleProfile: GoogleProfile = {
-          email: user.email!,
-          name: user.name!,
-          sub: account.providerAccountId,
-          picture: user.image ?? undefined,
-        };
+          // ✅ Prepare Google profile for OAuth API
+          const googleProfile: GoogleProfile = {
+            email: user.email!,
+            name: user.name!,
+            sub: account.providerAccountId,
+            picture: user.image ?? undefined,
+          };
 
-        // ✅ Call Django API
-        const djangoResponse = await AuthAPI.googleAuth(googleProfile);
+          // ✅ Call OAuth API
+          const djangoResponse = await AuthAPI.googleAuth(googleProfile);
           
-          console.log("Django authentication successful:", djangoResponse);
+          console.log("OAuth authentication successful:", djangoResponse);
 
           // ✅ Attach tokens to NextAuth `user` object
           user.accessToken = djangoResponse.access_token;
           user.refreshToken = djangoResponse.refresh_token;
           user.tokenExpires = Date.now() + djangoResponse.expires_in * 1000;
+          user.userData = djangoResponse.user;
+          user.created = djangoResponse.created;
           
           return true;
         } catch (error) {
-          console.error("Django authentication failed:", error);
+          console.error("OAuth authentication failed:", error);
           return false;
         }
+      } else if (account?.provider === "email-password") {
+        // Email/password authentication is handled in the authorize function
+        // Just return true here as the user object is already populated
+        return true;
       }
       return true;
     },
@@ -56,6 +101,8 @@ export const authOptions: NextAuthOptions = {
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           tokenExpires: user.tokenExpires,
+          userData: user.userData,
+          created: user.created,
         };
       }
 
@@ -69,6 +116,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      session.userData = token.userData;
+      session.created = token.created;
       session.error = token.error;
       return session;
     },
