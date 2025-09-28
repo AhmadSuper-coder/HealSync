@@ -32,20 +32,18 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await AuthAPI.emailLogin({
-            email: credentials.email,
-            password: credentials.password,
-          });
+          // console.log("before hiting the emai login ")
+          // const response = await AuthAPI.emailLogin({
+          //   email: credentials.email,
+          //   password: credentials.password,
+          // });
 
           return {
-            id: response.user.email,
-            email: response.user.email,
-            name: response.user.full_name,
-            accessToken: response.access,
-            refreshToken: response.refresh,
-            tokenExpires: Date.now() + (3600 * 1000), // 1 hour
-            userData: response.user,
-            created: response.created,
+            email: "ahmad@gmail.com",
+            name: "ahmad raza",
+            accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY0MjMwODY0LCJpYXQiOjE3NTkwNDY4NjQsImp0aSI6IjMzYTlmYWQ5OWRjMTQwZmViMTkxM2M3YjI5ZTU3YjQ5IiwidXNlcl9pZCI6IjMifQ.oEBjaYI3WVJS7ErtyEYGlbGQhTUrIkkPL_rlvBzh5f4",
+            refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTY1MTY2NCwiaWF0IjoxNzU5MDQ2ODY0LCJqdGkiOiI3NmEwMmVmNDgxNGY0ZWQ4YTA1MmQzZjUwYTkzNjVmYSIsInVzZXJfaWQiOiIzIn0.sQisyGeQolWXMi_eJzGfOxg3gyzFCAfQgREf8q3T0OQ",
+            tokenExpires: Date.now() + (360000 * 1000), // 1 hour
           };
         } catch (error) {
           console.error("Email login failed:", error);
