@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    console.log("Refreshing token with Django backend");
+    console.log("Refreshing token with Django backend", token.refreshToken);
     
     const refresh_request: RefreshRequest = { refresh: token.refreshToken };
     // Use the Django API service to refresh token

@@ -1,46 +1,20 @@
-import { apiClient } from './client';
+import {apiClient, post, get} from './client';
+import {DjangoPatient, DjangoPaginatedResponse} from "@/types/patients.ts";
+import {DjangoAuthResponse, GoogleProfile} from "@/types/auth.ts";
 
 
-export interface CreatePatientRequest {
-  name: string;
-  email: string;
-  phone: string;
-  age: number;
-  date_of_birth: string;
-  address?: string;
-  emergency_contact?: string;
-  medical_history?: string;
-  condition?: string;
-}
-
-export interface UpdatePatientRequest extends Partial<CreatePatientRequest> {
-  id: number;
-}
-
-
-export interface PatientListParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  ordering?: string;
-}
 
 // Patient API methods
 export const PatientAPI = {
-  /**
-   * Get list of patients with pagination and search
-   */
-  async list(params?: PatientListParams): Promise<PatientListResponse> {
-    const queryParams = new URLSearchParams();
-    
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.ordering) queryParams.append('ordering', params.ordering);
-    
-    const query = queryParams.toString();
-    return await apiClient.get(`/patients/${query ? `?${query}` : ''}`);
-  },
+
+    /**
+     *  get the list of patients
+     */
+
+    // GET /patients/ with nobody, returns paginated results
+    async getPatientList(): Promise<DjangoPaginatedResponse<DjangoPatient>> {
+        return await get<DjangoPaginatedResponse<DjangoPatient>>('api/patients/');
+    },
 
   /**
    * Get patient by ID

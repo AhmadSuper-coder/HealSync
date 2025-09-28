@@ -97,6 +97,7 @@ const createApiClient = (): AxiosInstance => {
       switch (status) {
         case 400:
           message = 'Bad request. Please check your input.';
+          console.error('Bad request:', error.response.data);
           break;
         case 403:
           message = 'Access forbidden. You do not have permission.';

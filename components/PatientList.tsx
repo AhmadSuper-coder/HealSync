@@ -19,8 +19,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { Patient } from "../types/patients";
+import PatientAPI from "../lib/django-api/patient.ts"
 
 // todo: remove mock functionality
 const mockPatients: Patient[] = [
@@ -82,8 +82,9 @@ export function PatientList() {
     const fetchPatients = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get<Patient[]>("/patients/"); // hit your backend endpoint
-        setPatients(response.data);
+        const response = await PatientAPI.getPatientList(); // hit your backend endpoint\
+        console.log("Response from Django API:", response);
+        setPatients(response);
       } catch (error) {
         console.error("Failed to fetch patients:", error);
       } finally {
