@@ -90,6 +90,8 @@ const createApiClient = (): AxiosInstance => {
           variant: 'destructive',
         });
 
+        console.log('Django API Error:', { })
+
         return Promise.reject(new Error(djangoError.error_message));
       }
 

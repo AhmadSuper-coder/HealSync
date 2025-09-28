@@ -19,61 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Patient } from "../types/patients";
-import PatientAPI from "../lib/django-api/patient.ts"
+import {DjangoPatient, Patient} from "../types/patients";
+import {PatientAPI} from "@/lib/django-api/patient.ts"
 
-// todo: remove mock functionality
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    name: "Rajesh Sharma",
-    age: 45,
-    gender: "Male",
-    phone: "+91 9876543210",
-    lastVisit: "2024-01-15",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Priya Patel",
-    age: 32,
-    gender: "Female",
-    phone: "+91 9876543211",
-    lastVisit: "2024-01-10",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Amit Kumar",
-    age: 28,
-    gender: "Male",
-    phone: "+91 9876543212",
-    lastVisit: "2023-12-20",
-    status: "inactive",
-  },
-  {
-    id: "4",
-    name: "Sunita Singh",
-    age: 38,
-    gender: "Female",
-    phone: "+91 9876543213",
-    lastVisit: "2024-01-12",
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Vikram Patel",
-    age: 52,
-    gender: "Male",
-    phone: "+91 9876543214",
-    lastVisit: "2024-01-08",
-    status: "active",
-  },
-];
 
 export function PatientList() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<DjangoPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -83,8 +35,7 @@ export function PatientList() {
       try {
         setLoading(true);
         const response = await PatientAPI.getPatientList(); // hit your backend endpoint\
-        console.log("Response from Django API:", response);
-        setPatients(response);
+        setPatients(response.results);
       } catch (error) {
         console.error("Failed to fetch patients:", error);
       } finally {
@@ -97,24 +48,24 @@ export function PatientList() {
 
   const filteredPatients = patients.filter(
     (patient) =>
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.phone.includes(searchTerm)
+      patient.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.mobile_number.includes(searchTerm)
   );
 
-  const handleViewPatient = (patient: Patient) => {
+  const handleViewPatient = (patient: DjangoPatient) => {
     router.push(`/patients/${patient.id}`);
   };
 
-  const handleEditPatient = (patient: Patient) => {
+  const handleEditPatient = (patient: DjangoPatient) => {
     router.push(`/patients/${patient.id}/edit`);
   };
 
-  const handleCallPatient = (patient: Patient) => {
+  const handleCallPatient = (patient: DjangoPatient) => {
     console.log('Call patient:', patient.phone);
   };
 
-  const handleViewHistory = (patient: Patient) => {
-    console.log('View patient medical history:', patient.id);
+  const handleViewHistory = (patient: DjangoPatient) => {
+    console.log('View patient medical history:', DjangoPatient.id);
   };
 
   const getStatusColor = (status: string) => {
@@ -162,11 +113,11 @@ export function PatientList() {
           <TableBody>
             {filteredPatients.map((patient) => (
               <TableRow key={patient.id} data-testid={`patient-row-${patient.id}`}>
-                <TableCell className="font-medium">{patient.name}</TableCell>
+                <TableCell className="font-medium">{patient.full_name}</TableCell>
                 <TableCell>{patient.age}</TableCell>
                 <TableCell>{patient.gender}</TableCell>
-                <TableCell>{patient.phone}</TableCell>
-                <TableCell>{patient.lastVisit}</TableCell>
+                <TableCell>{patient.mobile_number}</TableCell>
+                <TableCell>18-9-2025</TableCell>
                 <TableCell>
                   <Badge variant={getStatusColor(patient.status) as any}>
                     {patient.status}
