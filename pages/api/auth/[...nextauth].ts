@@ -1,39 +1,10 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-import { AuthAPI } from "../../../lib/django-api";
+import { AuthAPI } from "../../../lib/django-api/auth";
+import { GoogleProfile, RefreshRequest } from "../../../types/auth";
 
-// OAuth API integration for Google Authentication
-async function authenticateWithDjango(googleProfile: any) {
-  try {
-    console.log("Authenticating with OAuth backend:", googleProfile.email);
-    
-    // Use the real OAuth API service to authenticate
-    const response = await AuthAPI.googleAuth({
-      email: googleProfile.email,
-      name: googleProfile.name,
-      sub: googleProfile.sub,
-      picture: googleProfile.picture,
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      return {
-        access_token: data.access,
-        refresh_token: data.refresh,
-        user_data: data.user,
-        created: data.created,
-        expires_in: 3600, // Default to 1 hour
-      };
-    } else {
-      throw new Error(data.error || "OAuth authentication failed");
-    }
-  } catch (error) {
-    console.error("OAuth authentication error:", error);
-    throw error;
-  }
-}
+
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -47,20 +18,27 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          // Send Google profile to OAuth backend
-          const djangoResponse = await authenticateWithDjango({
-            email: user.email,
-            name: user.name,
-            sub: account.providerAccountId,
-            picture: profile?.image,
-          });
+
+          console.log("Google sign-in for:", user.email);
+          console.log("Google profile:", profile);
+
+        // ✅ Prepare Google profile for Django
+        const googleProfile: GoogleProfile = {
+          email: user.email!,
+          name: user.name!,
+          sub: account.providerAccountId,
+          picture: user.image ?? undefined,
+        };
+
+        // ✅ Call Django API
+        const djangoResponse = await AuthAPI.googleAuth(googleProfile);
           
-          // Store OAuth tokens in user object
+          console.log("Django authentication successful:", djangoResponse);
+
+          // ✅ Attach tokens to NextAuth `user` object
           user.accessToken = djangoResponse.access_token;
           user.refreshToken = djangoResponse.refresh_token;
-          user.userData = djangoResponse.user_data;
-          user.created = djangoResponse.created;
-          user.tokenExpires = Date.now() + (djangoResponse.expires_in * 1000);
+          user.tokenExpires = Date.now() + djangoResponse.expires_in * 1000;
           
           return true;
         } catch (error) {
@@ -77,8 +55,6 @@ export const authOptions: NextAuthOptions = {
           ...token,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          userData: user.userData,
-          created: user.created,
           tokenExpires: user.tokenExpires,
         };
       }
@@ -93,8 +69,6 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
-      session.userData = token.userData;
-      session.created = token.created;
       session.error = token.error;
       return session;
     },
@@ -115,22 +89,20 @@ export const authOptions: NextAuthOptions = {
 
 async function refreshAccessToken(token: any) {
   try {
-    console.log("Refreshing token with OAuth backend");
+    console.log("Refreshing token with Django backend");
     
-    // Use the OAuth API service to refresh token
-    const response = await AuthAPI.refreshToken(token.refreshToken);
-    const data = await response.json();
+    const refresh_request: RefreshRequest = { refresh: token.refreshToken };
+    // Use the Django API service to refresh token
+    const response = await AuthAPI.refreshToken(refresh_request);
 
-    if (response.ok) {
-      return {
-        ...token,
-        accessToken: data.access,
-        tokenExpires: Date.now() + (3600 * 1000), // Default to 1 hour
-        error: undefined,
-      };
-    } else {
-      throw new Error(data.error || "Token refresh failed");
-    }
+    console.log("Token refreshed successfully:", response);
+
+    return {
+      ...token,
+      accessToken: response.access,
+      refreshToken: response.refresh ?? token.refreshToken, // Fall back to old refresh token
+      tokenExpires: Date.now() + 30 * 60 * 1000, // Assume new token expires in 30 minutes
+    };
   } catch (error) {
     console.error("Error refreshing access token:", error);
     return {

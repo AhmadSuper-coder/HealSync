@@ -1,4 +1,6 @@
-import { apiClient } from './client';
+import { apiClient, post, get } from './client';
+import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse} from "../../types/auth";
+
 
 // Auth-related types
 export interface LoginRequest {
@@ -18,13 +20,7 @@ export interface LoginResponse {
   };
 }
 
-export interface RefreshRequest {
-  refresh_token: string;
-}
 
-export interface RefreshResponse {
-  access_token: string;
-}
 
 export interface OAuthLoginRequest {
   email: string;
@@ -56,6 +52,21 @@ export interface UserProfile {
 
 // Auth API methods
 export const AuthAPI = {
+
+  /**
+   * google Oauth authentication
+   */
+  // async googleAuth(data: { email: string; name: string; sub: string; picture?: string }) {
+  //   return await apiClient.post('api/accounts/oauth-login/', data);
+  // },
+
+  async googleAuth(data: GoogleProfile): Promise<DjangoAuthResponse> {
+    return await post<DjangoAuthResponse, GoogleProfile>(
+      "api/accounts/oauth-login/",
+      data
+    );
+  },
+
   /**
    * Login with username/password
    */
@@ -66,8 +77,8 @@ export const AuthAPI = {
   /**
    * Refresh access token
    */
-  async refresh(refreshData: RefreshRequest): Promise<RefreshResponse> {
-    return await apiClient.post('/auth/refresh/', refreshData);
+  async refreshToken(data: RefreshRequest): Promise<RefreshResponse> {
+    return await post<RefreshResponse, RefreshRequest>('api/auth/token/refresh/', data); 
   },
 
   /**

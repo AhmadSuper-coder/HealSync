@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Edit, Eye, FileText, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,15 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  gender: string;
-  phone: string;
-  lastVisit: string;
-  status: "active" | "inactive";
-}
+import { Patient } from "../types/patients";
 
 // todo: remove mock functionality
 const mockPatients: Patient[] = [
@@ -81,8 +73,26 @@ const mockPatients: Patient[] = [
 
 export function PatientList() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [patients] = useState<Patient[]>(mockPatients);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+    // Fetch patients on component mount
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get<Patient[]>("/patients/"); // hit your backend endpoint
+        setPatients(response.data);
+      } catch (error) {
+        console.error("Failed to fetch patients:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, []);
 
   const filteredPatients = patients.filter(
     (patient) =>
@@ -130,6 +140,12 @@ export function PatientList() {
         </div>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Loading patients...</p>
+          </div>
+        ) :(
+        <>
         <Table>
           <TableHeader>
             <TableRow>
@@ -191,6 +207,9 @@ export function PatientList() {
           <div className="text-center py-8 text-muted-foreground">
             <p>No patients found matching your search.</p>
           </div>
+        )}
+
+        </>
         )}
       </CardContent>
     </Card>
