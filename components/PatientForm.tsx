@@ -26,8 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { OTPVerification } from "./OTPVerification";
 import { FileUpload } from "./FileUpload";
 import { Phone, User, FileImage, CheckCircle } from "lucide-react";
-import { AuthAPI, PatientAPI } from "@/lib/django-api";
-
+import {PatientAPI} from "lib/django-api/patient.ts";
+import { AuthAPI } from "lib/django-api/auth.ts";
 const mobileSchema = z.object({
   mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
 });
@@ -91,10 +91,10 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
   const handleSendOTP = async (data: MobileFormData) => {
     setIsSendingOTP(true);
     try {
-      const response = await AuthAPI.sendOTP(data.mobile);
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
+        // by default send sms through sms
+      const response = await AuthAPI.sendOtpToMobile({identifier: data.mobile, channel: "sms"});
+
+      if (response.success) {
         setVerifiedMobile(data.mobile);
         setStep("otp");
         toast({
@@ -153,7 +153,7 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
         // Create new patient
         const response = await PatientAPI.create(payload);
         
-        if (response.ok) {
+        if (response) {
           toast({
             title: "Patient Registered",
             description: `${data.name} has been registered successfully.`,
@@ -312,9 +312,9 @@ export function PatientForm({ onSubmit, initialData, isEditing = false }: Patien
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

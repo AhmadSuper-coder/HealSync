@@ -85,12 +85,14 @@ const createApiClient = (): AxiosInstance => {
         });
 
         toast({
-          title: 'Error',
+          title: 'INFO',
           description: djangoError.error_message,
-          variant: 'destructive',
+          variant: 'default',
         });
 
         console.log('Django API Error:', { })
+        return { success: false, error_message: djangoError.error_message, };
+
 
         return Promise.reject(new Error(djangoError.error_message));
       }

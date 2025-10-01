@@ -1,6 +1,5 @@
 import { apiClient, post, get } from './client';
-import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse, EmailLoginRequest, EmailSignupRequest, AuthResponse} from "@/types/auth.ts";
-
+import { DjangoAuthResponse, GoogleProfile, RefreshRequest, RefreshResponse, EmailLoginRequest, EmailSignupRequest, AuthResponse, otpGenResponsePacket, otpGenRequestPacket} from "@/types/auth.ts";
 
 
 
@@ -93,4 +92,17 @@ export const AuthAPI = {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   },
+
+
+    /**
+     * send and generate otp to mobile number
+     */
+    async sendOtpToMobile(data: otpGenRequestPacket): Promise<otpGenResponsePacket> {
+        return await post<otpGenResponsePacket, otpGenRequestPacket>(
+            "api/otp/generate/",
+            data
+        );
+    },
+
 };
+

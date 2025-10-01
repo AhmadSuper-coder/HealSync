@@ -1,5 +1,12 @@
 import {apiClient, post, get} from './client';
-import {DjangoPatient, DjangoPaginatedResponse} from "@/types/patients.ts";
+import {
+    DjangoPatient,
+    DjangoPaginatedResponse,
+    PatientRequest,
+    PatientResponse,
+    PatientRequestPacket,
+    mapPatientRequestToDjango
+} from "@/types/patients.ts";
 import {DjangoAuthResponse, GoogleProfile} from "@/types/auth.ts";
 
 
@@ -26,9 +33,16 @@ export const PatientAPI = {
   /**
    * Create new patient
    */
-  async create(patientData: CreatePatientRequest): Promise<Patient> {
-    return await apiClient.post('/patients/', patientData);
+  async create(patientData: PatientRequestPacket): Promise<PatientResponse> {
+      // map frontend → backend
+      const payload = mapPatientRequestToDjango(patientData);
+      return await post<PatientResponse, Partial<DjangoPatient>>('api/patients/', payload);
   },
+    // call API with backend payload
+    // const response = await post<DjangoPatient, Partial<DjangoPatient>>(
+    //     "api/patients/",
+    //     payload
+    // );
 
   /**
    * Update existing patient

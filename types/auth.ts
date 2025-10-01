@@ -51,3 +51,21 @@ export interface AuthResponse {
     sub_id?: string | null;
   };
 }
+
+
+export interface otpGenRequestPacket {
+    identifier: string;
+    channel: string;
+}
+
+export interface otpGenResponsePacket {
+    success: boolean;
+    message: string;
+    expires_at: number;
+    data: {
+        identifier: string;
+        channel: string;
+    }
+}
+
+
