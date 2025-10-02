@@ -5,14 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {UploadedFile} from "@/types/file_upload.ts"
 
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadDate: string;
-}
 
 interface FileUploadProps {
   patientId?: string;
@@ -141,62 +135,64 @@ export function FileUpload({ patientId, onUpload }: FileUploadProps) {
       </Card>
 
       {/* Uploaded Files List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Uploaded Files ({uploadedFiles.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {uploadedFiles.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <File className="mx-auto h-12 w-12 mb-4" />
-              <p>No files uploaded yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {uploadedFiles.map((file) => (
-                <div 
-                  key={file.id} 
-                  className="flex items-center justify-between p-3 border rounded-lg hover-elevate"
-                  data-testid={`uploaded-file-${file.id}`}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <File className="h-5 w-5 text-muted-foreground" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{file.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{formatFileSize(file.size)}</span>
-                        <span>•</span>
-                        <span>{file.uploadDate}</span>
-                      </div>
-                    </div>
-                    <Badge className={getFileTypeColor(file.type)}>
-                      {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewFile(file)}
-                      data-testid={`button-view-file-${file.id}`}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteFile(file.id)}
-                      data-testid={`button-delete-file-${file.id}`}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/*<Card>*/}
+        {/*<CardHeader>*/}
+        {/*  <CardTitle>Uploaded Files ({uploadedFiles.length})</CardTitle>*/}
+        {/*</CardHeader>*/}
+        {/*<CardContent>*/}
+        {/*  {uploadedFiles.length === 0 ? (*/}
+        {/*    <div className="text-center py-8 text-muted-foreground">*/}
+        {/*      <File className="mx-auto h-12 w-12 mb-4" />*/}
+        {/*      <p>No files uploaded yet.</p>*/}
+        {/*    </div>*/}
+        {/*  ) : (*/}
+        {/*    <div className="space-y-3">*/}
+        {/*      {uploadedFiles.map((file) => (*/}
+        {/*        <div */}
+        {/*          key={file.id} */}
+        {/*          className="flex items-center justify-between p-3 border rounded-lg hover-elevate"*/}
+        {/*          data-testid={`uploaded-file-${file.id}`}*/}
+        {/*        >*/}
+        {/*          <div className="flex items-center gap-3 flex-1">*/}
+        {/*            <File className="h-5 w-5 text-muted-foreground" />*/}
+        {/*            <div className="flex-1 min-w-0">*/}
+        {/*              <p className="font-medium truncate">{file.name}</p>*/}
+        {/*              <div className="flex items-center gap-2 text-sm text-muted-foreground">*/}
+        {/*                <span>{formatFileSize(file.size)}</span>*/}
+        {/*                <span>•</span>*/}
+        {/*                <span>{file.uploadDate}</span>*/}
+        {/*              </div>*/}
+        {/*            </div>*/}
+        {/*            <Badge className={getFileTypeColor(file.type)}>*/}
+        {/*              {file.type.split('/')[1]?.toUpperCase() || 'FILE'}*/}
+        {/*            </Badge>*/}
+        {/*          </div>*/}
+        {/*          <div className="flex gap-2">*/}
+        {/*            <Button*/}
+        {/*              size="sm"*/}
+        {/*              variant="outline"*/}
+        {/*              onClick={() => handleViewFile(file)}*/}
+        {/*              data-testid={`button-view-file-${file.id}`}*/}
+        {/*            >*/}
+        {/*              <Eye className="h-4 w-4" />*/}
+        {/*            </Button>*/}
+        {/*            <Button*/}
+        {/*              size="sm"*/}
+        {/*              variant="outline"*/}
+        {/*              onClick={() => handleDeleteFile(file.id)}*/}
+        {/*              data-testid={`button-delete-file-${file.id}`}*/}
+        {/*            >*/}
+        {/*              <X className="h-4 w-4" />*/}
+        {/*            </Button>*/}
+        {/*          </div>*/}
+        {/*        </div>*/}
+        {/*      ))}*/}
+        {/*    </div>*/}
+        {/*  )}*/}
+        {/*</CardContent>*/}
+      {/*</Card>*/}
+
+
     </div>
   );
 }
