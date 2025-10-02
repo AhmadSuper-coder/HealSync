@@ -1,47 +1,72 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, FileText, Eye, Edit, Download, Image as ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
-import { DocumentAPI } from "@/lib/django-api";
-import { UploadDocumentDialog } from "./UploadDocumentDialog";
-import { EditDocumentDialog } from "./EditDocumentDialog";
-import { ViewDocumentDialog } from "./ViewDocumentDialog";
-
-interface Document {
-  id: string | number;
-  name: string;
-  type: string;
-  date: string;
-  size: string;
-  patient_id?: number;
-  file_url?: string;
-}
+import {useState} from "react";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Download, Edit, Eye, FileText, Image as ImageIcon, Plus} from "lucide-react";
+import {useToast} from "@/hooks/use-toast";
+import {queryClient} from "@/lib/queryClient";
+import {DocumentAPI} from "@/lib/django-api/document.ts";
+import {UploadDocumentDialog} from "./UploadDocumentDialog";
+import {EditDocumentDialog} from "./EditDocumentDialog";
+import {ViewDocumentDialog} from "./ViewDocumentDialog";
+import {DocumentItemResponse} from "@/types/document.ts";
 
 interface PatientDocumentsProps {
   patientId: string;
 }
 
+
+// Helper functions for formatting
+const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+};
+
+const formatFileSize = (bytes: number) => {
+    if (!bytes || isNaN(bytes)) return '0 B';
+
+    // Convert bytes to MB with 2 decimal places
+    if (bytes >= 1048576) {
+        return `${(bytes / 1048576).toFixed(2)} MB`;
+    }
+    // Convert to KB if less than 1 MB
+    else if (bytes >= 1024) {
+        return `${(bytes / 1024).toFixed(2)} KB`;
+    }
+    // Keep as bytes if very small
+    return `${bytes} B`;
+};
+
 export function PatientDocuments({ patientId }: PatientDocumentsProps) {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
+  const [editingDocument, setEditingDocument] = useState<DocumentItemResponse | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<DocumentItemResponse | null>(null);
   const { toast } = useToast();
 
   // Fetch documents from API
-  const { data: documents = [], isLoading } = useQuery<Document[]>({
-    queryKey: ['documents', patientId],
-    queryFn: async () => {
-      const response = await DocumentAPI.getAll({ patient_id: Number(patientId) });
-      if (!response.ok) throw new Error('Failed to fetch documents');
-      const data = await response.json();
-      return data.results || data;
-    },
-    enabled: !!patientId,
-  });
+    const { data: documents = [], isLoading, error } = useQuery<DocumentItemResponse[]>({
+        queryKey: ['documents', patientId],
+        queryFn: async () => {
+          const response = await DocumentAPI.getDocumentByPatientId(patientId);
+          // Need to extract documents array from the API response
+          if (response && Array.isArray(response)) {
+            return response;
+          }
+
+          // If we got a single document, wrap it in array
+          if (response && !Array.isArray(response)) {
+            return [response];
+          }
+          // Default to empty array if none of the above conditions match
+          return [];
+        },
+        enabled: !!patientId
+      });
 
   // Delete document mutation
   const deleteMutation = useMutation({
@@ -139,7 +164,7 @@ export function PatientDocuments({ patientId }: PatientDocumentsProps) {
           <div className="space-y-3">
             {documents.map((document) => (
               <div 
-                key={document.id} 
+                key={document.id}
                 className="border rounded-lg p-4 hover:bg-muted/50 transition-colors" 
                 data-testid={`document-${document.id}`}
               >
@@ -149,11 +174,11 @@ export function PatientDocuments({ patientId }: PatientDocumentsProps) {
                       <FileText className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{document.name}</p>
+                      <p className="font-medium">{document.filename}</p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span className="capitalize">{document.type.replace(/_/g, ' ')}</span>
-                        <span>{document.date}</span>
-                        <span>{document.size}</span>
+                        <span className="capitalize">{document.document_type}</span>
+                        <span>{document.created_at}</span>
+                        <span>{document.size_bytes}</span>
                       </div>
                     </div>
                   </div>

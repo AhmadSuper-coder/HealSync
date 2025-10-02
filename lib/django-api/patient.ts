@@ -7,7 +7,6 @@ import {
     PatientRequestPacket,
     mapPatientRequestToDjango
 } from "@/types/patients.ts";
-import {DjangoAuthResponse, GoogleProfile} from "@/types/auth.ts";
 
 
 

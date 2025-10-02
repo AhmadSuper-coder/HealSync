@@ -1,17 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText } from "lucide-react";
+import {DocumentItemResponse} from "@/types/document.ts";
 
-interface Document {
-  id: string | number;
-  name: string;
-  type: string;
-  date: string;
-  size: string;
-  file_url?: string;
-}
+
 
 interface ViewDocumentDialogProps {
-  document: Document;
+  document: DocumentItemResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -30,27 +24,27 @@ export function ViewDocumentDialog({ document, open, onOpenChange }: ViewDocumen
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="font-medium">Document Name</p>
-              <p className="text-muted-foreground">{document.name}</p>
+              <p className="text-muted-foreground">{document.filename}</p>
             </div>
             <div>
               <p className="font-medium">Type</p>
-              <p className="text-muted-foreground capitalize">{document.type.replace(/_/g, ' ')}</p>
+              <p className="text-muted-foreground capitalize">{document.document_type.replace(/_/g, ' ')}</p>
             </div>
             <div>
               <p className="font-medium">Date</p>
-              <p className="text-muted-foreground">{document.date}</p>
+              <p className="text-muted-foreground">{document.created_at}</p>
             </div>
             <div>
               <p className="font-medium">Size</p>
-              <p className="text-muted-foreground">{document.size}</p>
+              <p className="text-muted-foreground">{document.size_bytes}</p>
             </div>
           </div>
           <div className="border rounded-lg p-8 text-center bg-muted/30">
-            {document.file_url ? (
+            {document.download_url ? (
               <iframe 
-                src={document.file_url} 
+                src={document.download_url}
                 className="w-full h-96 rounded-lg"
-                title={document.name}
+                title={document.filename}
               />
             ) : (
               <div>
